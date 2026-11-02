@@ -377,3 +377,44 @@
     justify-self: stretch;
   }
 }
+
+@media (max-width: 390px) {
+  .section {
+    padding: 0.9rem;
+  }
+
+  .nodeResult {
+    overflow-wrap: anywhere;
+  }
+
+  .nodeActions {
+    justify-content: stretch;
+  }
+
+  .nodeActions button {
+    min-height: 2.75rem;
+  }
+
+  .addNodeButton,
+  .nodeSelectButton,
+  .nodeSelectSelected,
+  .nodeIconButton,
+  .nodeToggle {
+    min-height: 2.75rem;
+  }
+
+  .checkboxRow select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .controls > button {
+    width: 100%;
+    min-height: 2.75rem;
+  }
+}

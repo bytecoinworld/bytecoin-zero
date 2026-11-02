@@ -4,6 +4,7 @@ import {
   DEFAULT_NODE,
   DEFAULT_NODE_SETTINGS,
   enabledNodePool,
+  getHostedProxyNodeId,
   getNodeEngineAddress,
   getNodeRpcAddress,
   normalizeNodeAddress,
@@ -48,6 +49,12 @@ describe('randomNodeFromPool', () => {
 });
 
 describe('getNodeRpcAddress', () => {
+  it('identifies only the curated hosted proxy nodes', () => {
+    expect(getHostedProxyNodeId(DEFAULT_NODE)).toBe('default');
+    expect(getHostedProxyNodeId(ALTERNATE_NODE)).toBe('alternate');
+    expect(getHostedProxyNodeId('https://custom.example')).toBeNull();
+  });
+
   it('uses the same-origin proxy for the alternate node on loopback-hosted previews', () => {
     const port = window.location.port || '80';
     expect(getNodeRpcAddress(ALTERNATE_NODE)).toBe(window.location.origin);

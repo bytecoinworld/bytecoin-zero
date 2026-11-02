@@ -14,6 +14,7 @@
 ## 📚 Contents
 
 - [✨ Features](#-features)
+- [🌐 Online wallet](#-online-wallet)
 - [🚀 Run locally](#-run-locally)
 - [🌐 Nodes and synchronization](#-nodes-and-synchronization)
 - [🔐 Wallet security and recovery](#-wallet-security-and-recovery)
@@ -37,6 +38,10 @@
 | **Node settings** | Choose public nodes, test reachability, configure automatic failover and optional rotation, and view synchronization status. |
 | **Wallet help** | Open the in-app guide for wallet setup, payments, backups, network settings, and troubleshooting. |
 | **Responsive interface** | Use the wallet on supported desktop and mobile browsers, with light and dark appearance support. |
+
+## 🌐 Online wallet
+
+Visit Bytecoin Zero at **[https://bcn.money](https://bcn.money)** to use the browser-based wallet. Before entering wallet information, verify the address bar shows `https://bcn.money`. See the [Privacy Policy](https://bcn.money/privacy-policy/) for details about browser storage, blockchain nodes, and external services.
 
 ## 🚀 Run locally
 
@@ -89,6 +94,12 @@ The proxy works around browser CORS restrictions during local development; it do
 > **Do not expose the development server or its proxy as a production service. Do not deploy a build with `REACT_APP_USE_LOCAL_NODE_PROXY=true`.** Production wallet requests should use appropriately configured HTTPS nodes.
 
 The browser bundle includes a preserved v3.4.3 wallet-engine snapshot for synchronization with the configured v3.5.1 daemons. A node can respond to a status check and still be incompatible with the wallet's sync protocol. Older engines may try `/sync_blocks/*` and fall back to `/binary_rpc`; a 404 from the static sync endpoint can be normal when that fallback succeeds.
+
+### Hosted node relay and CORS
+
+The `bcn.money` Cloudflare Pages deployment includes a same-origin relay for the built-in nodes listed in [`src/lib/hostedNodeProxyNodes.json`](./src/lib/hostedNodeProxyNodes.json). It forwards only the wallet's JSON-RPC, binary-RPC, and sync-block paths to those fixed HTTPS upstreams; it is not an arbitrary URL proxy. Cloudflare Pages must deploy the repository's root `functions/` directory alongside the `build/` output. The copied [`public/_routes.json`](./public/_routes.json) limits Function invocation to the RPC paths.
+
+Custom nodes that are not in the curated allowlist are contacted directly by the browser and must allow CORS for `https://bcn.money`, including the `OPTIONS` preflight for JSON requests. To support another node through the relay, maintainers must verify it, add it to the shared allowlist, and redeploy. Do not turn the relay into an open proxy; configure Cloudflare rate limits for the RPC endpoints.
 
 Node settings behavior:
 
@@ -169,9 +180,10 @@ The build script passes Node.js's OpenSSL compatibility flag to the legacy Webpa
 | --- | --- |
 | `public/` | HTML entry point, web app manifest, icons, and static assets. |
 | `src/` | React and TypeScript wallet interface. |
-| `src/lib/` | Wallet, synchronization, settings, contacts, and storage helpers. |
+| `src/lib/` | Wallet, synchronization, settings, contacts, storage helpers, and the hosted node allowlist. |
 | `src/css/` | Component styles. |
 | `src/**/*.test.*` | Tests colocated with the components and libraries they cover. |
+| `functions/` | Cloudflare Pages Function middleware for the curated production node relay. |
 | `build/` | Generated production site; created by `npm run build`. |
 | `.github/workflows/release.yml` | Tag-triggered GitHub Release build and archive workflow. |
 | `CHANGELOG.md` | Release and feature history. |
@@ -180,13 +192,15 @@ The build script passes Node.js's OpenSSL compatibility flag to the legacy Webpa
 
 The application version shown in the wallet comes from `package.json`. To prepare a release, update the version with the appropriate npm command, update [CHANGELOG.md](./CHANGELOG.md), and push the matching `v<version>` tag.
 
+See [ReleaseNotes.md](./ReleaseNotes.md) for the Bytecoin Zero 0.2.1 release highlights.
+
 For example:
 
 ```sh
 npm version patch
 ```
 
-The GitHub Actions release workflow runs on `v*` tags and verifies that the tag matches `package.json`. It installs the locked dependencies, builds the static site, and attaches a ZIP archive to the GitHub Release. It does **not** automatically publish the app to GitHub Pages or another hosting provider. Deploy the contents of `build/` separately to your chosen HTTPS static host.
+The GitHub Actions release workflow runs on `v*` tags and verifies that the tag matches `package.json`. It installs the locked dependencies, builds the static site, and attaches a ZIP archive to the GitHub Release. It does **not** automatically publish the app to GitHub Pages or another hosting provider. A static host can serve `build/`, but the production node relay requires Cloudflare Pages to deploy the repository's root `functions/` directory as well; uploading only the build output does not deploy the relay. Without the relay, configured nodes must provide browser CORS themselves.
 
 ## 🤝 Contributing and support
 

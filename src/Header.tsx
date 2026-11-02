@@ -30,12 +30,33 @@ const getSyncError = (status: sync.IStatus) => {
   return null;
 };
 
+const getSyncPresentation = (status: sync.IStatus) => {
+  const initializing = status.topBlockHash === '';
+  const syncing = status.topBlockHeight !== status.topKnownBlockHeight;
+  const syncError = getSyncError(status);
+  const statusText = syncError ? syncError.title :
+    initializing ? 'Connecting to node…' : syncing ? 'Synchronizing' : 'Synced';
+  const statusDot = syncError ?
+    styles.statusDotError :
+    syncing || initializing ? styles.statusDotSyncing : styles.statusDotSynced;
+
+  return {initializing, syncing, syncError, statusText, statusDot};
+};
+
 type StatusProps = sync.IStatus & {nodeAddress: string; compact?: boolean; showError?: boolean};
 
+export const SyncStatusIndicator = React.memo((props: sync.IStatus) => {
+  const {statusText, statusDot} = getSyncPresentation(props);
+  return (
+    <div className={`${styles.syncStatus} ${styles.syncStatusInline}`} role='status' aria-label={`Synchronization status: ${statusText}`}>
+      <span className={`${styles.statusDot} ${statusDot}`}/>
+      <span className={styles.syncStatusText}>{statusText}</span>
+    </div>
+  );
+});
+
 export const Status = React.memo((props: StatusProps) => {
-  const initializing = props.topBlockHash === '';
-  const syncing = props.topBlockHeight !== props.topKnownBlockHeight;
-  const syncError = getSyncError(props);
+  const {initializing, syncing, syncError, statusText, statusDot} = getSyncPresentation(props);
   const hasSyncError = !!syncError;
   const waitingForNodeHeight = initializing && props.topKnownBlockHeight === 0 &&
     !sync.isDaemonVersionIncompatible(props);
@@ -43,10 +64,6 @@ export const Status = React.memo((props: StatusProps) => {
     Math.min(syncing ? 99 : 100, Math.floor(props.topBlockHeight / props.topKnownBlockHeight * 100)) : 0;
   const showProgress = (props.topKnownBlockHeight > 0 && !hasSyncError) || waitingForNodeHeight;
   const relTime = util.useRelativeTime(props.topBlockTime);
-  const statusDot = hasSyncError ?
-    styles.statusDotError :
-    syncing || initializing ? styles.statusDotSyncing : styles.statusDotSynced;
-
   return (
     <section className={`${styles.status} ${props.compact ? styles.statusCompact : ''}`} aria-label='Wallet synchronization status'>
       <div className={styles.statusHeading}>
@@ -54,8 +71,7 @@ export const Status = React.memo((props: StatusProps) => {
           <div className={styles.statusLabel}>Network status</div>
           <div className={styles.syncStatus}>
             <span className={`${styles.statusDot} ${statusDot}`}/>
-            {syncError ? syncError.title :
-              initializing ? 'Connecting to node…' : syncing ? 'Synchronizing' : 'Synced'}
+            {statusText}
           </div>
           <div className={styles.nodeAddress}>{props.nodeAddress}</div>
         </div>

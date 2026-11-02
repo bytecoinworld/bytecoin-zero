@@ -163,6 +163,9 @@ describe('SendForm confirmation flow', () => {
     const subtractFee = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
     const anonymity = container.querySelector('#send-anonymity') as HTMLInputElement;
     const paymentId = container.querySelector('#send-payment-id') as HTMLInputElement;
+    const anonymityProgress = container.querySelector('[role="progressbar"]') as HTMLDivElement;
+    const progressFill = anonymityProgress.querySelector('span') as HTMLSpanElement;
+    const initialProgressColor = progressFill.style.color;
     act(() => {
       feeRate.value = '160';
       Simulate.change(feeRate);
@@ -174,6 +177,8 @@ describe('SendForm confirmation flow', () => {
       Simulate.change(paymentId);
     });
 
+    expect(anonymityProgress.getAttribute('aria-valuenow')).toBe('7');
+    expect(progressFill.style.color).not.toBe(initialProgressColor);
     openPasswordPrompt();
     await enterPasswordAndSubmit('correct-password');
 

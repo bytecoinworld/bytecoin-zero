@@ -38,6 +38,18 @@
   font-weight: 700;
 }
 
+.syncStatusInline {
+  min-width: 0;
+  font-size: 0.8rem;
+}
+
+.syncStatusText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .nodeAddress {
   margin: 0.3rem 0 0 1.15rem;
   color: var(--color-muted);

@@ -38,6 +38,8 @@ const App = React.memo(() => {
   const sourceUrl = sourceRevision && /^[0-9a-f]{7,40}$/i.test(sourceRevision) ?
     `https://github.com/bytecoinworld/bytecoin-zero/tree/${sourceRevision}` :
     'https://github.com/bytecoinworld/bytecoin-zero';
+  const supportUrl = 'https://github.com/bytecoinworld/bytecoin-zero/issues';
+  const privacyPolicyUrl = './privacy-policy/';
   const openHelp = useCallback(() => setHelpOpen(true), []);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
 
@@ -119,6 +121,10 @@ const App = React.memo(() => {
                 walletPassword={walletPassword}
                 nodeSettings={nodeSettings}
                 onOpenHelp={openHelp}
+                sourceUrl={sourceUrl}
+                supportUrl={supportUrl}
+                privacyPolicyUrl={privacyPolicyUrl}
+                version={packageInfo.version}
                 automaticFailoverAttempted={automaticFailoverAttempted}
                 onNodeSettingsChange={(settings) => {
                   appSettings.saveNodeSettings(settings);
@@ -165,7 +171,13 @@ const App = React.memo(() => {
       <div className={styles.footer}>
         <span>Maintained by the Bytecoin community</span>
         <span>Bytecoin Zero v{packageInfo.version}</span>
-        <span><a href={sourceUrl} target='_blank' rel='noreferrer noopener'>Source</a> · <a href='https://github.com/bytecoinworld/bytecoin-zero/issues' target='_blank' rel='noreferrer noopener'>Support</a></span>
+        <span>
+          <a href={sourceUrl} target='_blank' rel='noreferrer noopener'>Source</a>
+          {' · '}
+          <a href={supportUrl} target='_blank' rel='noreferrer noopener'>Support</a>
+          {' · '}
+          <a href={privacyPolicyUrl}>Privacy Policy</a>
+        </span>
       </div>
     </div>
   );

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "include": [
+    "/_node-proxy/*",
+    "/json_rpc",
+    "/binary_rpc",
+    "/sync_blocks/*"
+  ],
+  "exclude": []
+}

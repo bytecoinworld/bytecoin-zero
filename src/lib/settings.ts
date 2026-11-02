@@ -1,3 +1,5 @@
+import hostedNodeProxyNodes from './hostedNodeProxyNodes.json';
+
 export interface INodeSettings {
   readonly activeNode: string;
   readonly nodePool: string[];
@@ -21,6 +23,27 @@ export const DEFAULT_NODE_SETTINGS: INodeSettings = {
 };
 
 const STORAGE_KEY = 'bytecoin-zero.nodes';
+const NODE_PROXY_COOKIE = 'bytecoin-node';
+const HOSTED_PROXY_HOST = 'bcn.money';
+
+export function getHostedProxyNodeId(node: string): string | null {
+  const entry = Object.entries(hostedNodeProxyNodes).find(([, address]) => address === node);
+  return entry ? entry[0] : null;
+}
+
+function selectHostedProxyNode(node: string): boolean {
+  if (window.location.hostname.toLowerCase() !== HOSTED_PROXY_HOST) {
+    return false;
+  }
+
+  const nodeId = getHostedProxyNodeId(node);
+  if (!nodeId) {
+    return false;
+  }
+
+  document.cookie = `${NODE_PROXY_COOKIE}=${nodeId}; Path=/; Secure; SameSite=Strict`;
+  return document.cookie.split(';').some((cookie) => cookie.trim() === `${NODE_PROXY_COOKIE}=${nodeId}`);
+}
 
 export function normalizeNodeAddress(value: string): string {
   const parsed = new URL(value.trim());
@@ -93,6 +116,11 @@ function usesLocalNodeProxy(): boolean {
 
 export function getNodeRpcAddress(node: string, useLocalProxy = usesLocalNodeProxy()): string {
   const normalized = normalizeNodeAddress(node);
+  const hostedProxyNodeId = window.location.hostname.toLowerCase() === HOSTED_PROXY_HOST ?
+    getHostedProxyNodeId(normalized) : null;
+  if (hostedProxyNodeId) {
+    return `${window.location.origin}/_node-proxy/${hostedProxyNodeId}`;
+  }
   if (useLocalProxy && normalized === ALTERNATE_NODE) {
     return window.location.origin;
   }
@@ -101,6 +129,9 @@ export function getNodeRpcAddress(node: string, useLocalProxy = usesLocalNodePro
 
 export function getNodeEngineAddress(node: string, useLocalProxy = usesLocalNodeProxy()): string {
   const normalized = normalizeNodeAddress(node);
+  if (selectHostedProxyNode(normalized)) {
+    return window.location.origin;
+  }
   if (useLocalProxy && normalized === ALTERNATE_NODE) {
     return `${localProxyHost()}:${localProxyPort()}`;
   }

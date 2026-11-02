@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {act} from 'react-dom/test-utils';
-import {Status, StatusError} from './Header';
+import {Status, StatusError, SyncStatusIndicator} from './Header';
 import {IStatus} from './lib/sync';
 
 describe('sync status', () => {
@@ -37,6 +37,26 @@ describe('sync status', () => {
     expect(container.querySelector('[aria-label="Waiting for node height"]')).not.toBeNull();
     expect(container.querySelector('progress')).toBeNull();
     expect(container.textContent).toContain('Connecting to node…');
+  });
+
+  it('shows the current synchronization state in the compact indicator', () => {
+    act(() => {
+      ReactDOM.render(
+        <SyncStatusIndicator
+          {...{
+            ...status(''),
+            topBlockHeight: 3652918,
+            topBlockHash: 'current-block',
+            topKnownBlockHeight: 3652919,
+          }}
+        />,
+        container,
+      );
+    });
+
+    const indicator = container.querySelector('[role="status"]');
+    expect(indicator && indicator.getAttribute('aria-label')).toBe('Synchronization status: Synchronizing');
+    expect(container.textContent).toContain('Synchronizing');
   });
 
   it('keeps a nearly complete sync below 100% until the heights match', () => {

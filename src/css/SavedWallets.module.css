@@ -261,3 +261,14 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+@media (max-width: 390px) {
+  .unlockActions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .unlockActions button,
+  .openButton {
+    min-height: 2.75rem;
+  }
+}

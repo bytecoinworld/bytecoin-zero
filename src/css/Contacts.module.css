@@ -325,3 +325,36 @@
     padding: 0.45rem 0.6rem;
   }
 }
+
+@media (max-width: 390px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .addButton,
+  .saveButton,
+  .cancelButton,
+  .contactActions button {
+    min-height: 2.75rem;
+  }
+
+  .searchRow {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .searchBox {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .count {
+    flex: 1 1 100%;
+    text-align: right;
+  }
+
+  .contactActions {
+    justify-content: flex-start;
+    padding-left: 0;
+  }
+}

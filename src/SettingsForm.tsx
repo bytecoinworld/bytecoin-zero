@@ -180,7 +180,7 @@ const SettingsForm = React.memo((props: {
           reachableNodes.push(result.node);
           report.push(`${result.node} — RPC reachable at block ${util.formatNumber(result.height)}`);
         } else {
-          report.push(`${result.node} — RPC check failed (${result.error}); verify network access and browser CORS.`);
+          report.push(`${result.node} — RPC check failed (${result.error}); custom nodes must allow browser CORS or be added to bcn.money's curated relay.`);
         }
       }
       if (!reachableNodes.includes(selectedNode)) {
@@ -376,7 +376,7 @@ const SettingsForm = React.memo((props: {
             {[5, 15, 30, 60].map((minutes) => <option key={minutes} value={minutes}>{minutes} minutes</option>)}
           </select>
         </div>
-        <p className={styles.helpText}>The automatic pool contains enabled nodes. The wallet tries one alternate node after a connection error; random rotation uses enabled nodes. A successful get_status check confirms reachability, not sync-protocol compatibility. Direct public nodes must allow browser CORS.</p>
+        <p className={styles.helpText}>The automatic pool contains enabled nodes. The wallet tries one alternate node after a connection error; random rotation uses enabled nodes. bcn.money relays only its curated node allowlist. Other public nodes must allow browser CORS. A successful get_status check confirms reachability, not sync-protocol compatibility.</p>
         {nodeResult && <pre className={styles.nodeResult} role='status'>{nodeResult}</pre>}
         <button type='button' className={styles.primaryButton} onClick={saveNodes} disabled={savingNodeSettings || testingNodes}>
           <Icon name='network' size={17}/>

@@ -78,6 +78,12 @@ const SendForm = React.memo((props: {
   const anonymity = Number(anonymityInput);
   const anonymityValid = anonymityInput !== '' && Number.isSafeInteger(anonymity) &&
     anonymity >= MIN_ANONYMITY && anonymity <= MAX_ANONYMITY;
+  const displayAnonymity = Number.isFinite(anonymity) ?
+    Math.min(MAX_ANONYMITY, Math.max(MIN_ANONYMITY, anonymity)) : MIN_ANONYMITY;
+  const anonymityProgress = ((displayAnonymity - MIN_ANONYMITY) /
+    (MAX_ANONYMITY - MIN_ANONYMITY)) * 100;
+  const anonymityProgressHue = Math.round(anonymityProgress * 1.2);
+  const anonymityProgressColor = `hsl(${anonymityProgressHue}, 72%, 46%)`;
   const normalizedPaymentId = paymentId.trim();
   const paymentIdValid = !normalizedPaymentId || PAYMENT_ID_PATTERN.test(normalizedPaymentId);
   const sendOptionsValid = anonymityValid && paymentIdValid;
@@ -350,6 +356,23 @@ const SendForm = React.memo((props: {
               aria-describedby={!anonymityValid ? 'send-anonymity-error' : undefined}
               onChange={(event) => setAnonymityInput(event.target.value)}
             />
+            <div
+              className={styles.anonymityProgress}
+              role='progressbar'
+              aria-label='Anonymity level'
+              aria-valuemin={MIN_ANONYMITY}
+              aria-valuemax={MAX_ANONYMITY}
+              aria-valuenow={displayAnonymity}
+              aria-valuetext={`${displayAnonymity} of ${MAX_ANONYMITY}`}
+            >
+              <span
+                className={styles.anonymityProgressFill}
+                style={{width: `${anonymityProgress}%`, color: anonymityProgressColor}}
+              />
+            </div>
+            <div className={styles.anonymityScale} aria-hidden='true'>
+              <span>{MIN_ANONYMITY}</span><span>{MAX_ANONYMITY}</span>
+            </div>
           </label>
           <label className={styles.optionField} htmlFor='send-payment-id'>
             Payment ID

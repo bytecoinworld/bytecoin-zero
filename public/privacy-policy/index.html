@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f2f8">
+    <meta name="description" content="Privacy Policy for Bytecoin Zero, the community-maintained Bytecoin wallet at bcn.money. Learn how browser storage, blockchain nodes, and external services handle data.">
+    <meta name="keywords" content="Bytecoin Zero privacy policy, bcn.money privacy, Bytecoin wallet privacy, BCN wallet data">
+    <link rel="canonical" href="https://bcn.money/privacy-policy/">
+    <title>Privacy Policy | Bytecoin Zero</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f4f2f8;
+        --surface: rgba(255, 255, 255, 0.88);
+        --surface-strong: #fff;
+        --text: #241a2c;
+        --muted: #716779;
+        --border: rgba(72, 53, 88, 0.12);
+        --accent: #c33f7f;
+        --accent-soft: #f9eaf2;
+        --link: #9e2d69;
+        --shadow: 0 18px 55px rgba(48, 34, 60, 0.08);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(ellipse at 86% 0%, rgba(196, 74, 139, 0.12), transparent 30rem),
+          radial-gradient(ellipse at 0% 40%, rgba(92, 123, 194, 0.08), transparent 32rem),
+          var(--page);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a { color: var(--link); text-underline-offset: 0.2em; }
+      a:hover { color: var(--accent); }
+      a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 0.2rem; }
+
+      .sitebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: min(74rem, calc(100% - 3rem));
+        margin: 0 auto;
+        padding: 1.15rem 0;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 2.8rem;
+        height: 2.8rem;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.75);
+        border-radius: 0.9rem;
+        background: linear-gradient(145deg, #ed5796, #a846bd);
+        box-shadow: 0 8px 20px rgba(184, 57, 123, 0.22);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 850;
+        letter-spacing: 0.04em;
+      }
+
+      .brand-name { display: grid; line-height: 1.25; }
+      .brand-name strong { font-size: 0.9rem; letter-spacing: -0.02em; }
+      .brand-name span { margin-top: 0.18rem; color: var(--muted); font-size: 0.7rem; }
+
+      .back-link {
+        display: inline-flex;
+        min-height: 2.7rem;
+        align-items: center;
+        justify-content: center;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        background: var(--surface);
+        color: var(--text);
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+      }
+
+      .back-link:hover {
+        transform: translateY(-1px);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--link);
+      }
+
+      main {
+        width: min(74rem, calc(100% - 3rem));
+        margin: 1.3rem auto 0;
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        padding: clamp(1.6rem, 5vw, 3.3rem);
+        border: 1px solid rgba(255, 255, 255, 0.82);
+        border-radius: 1.5rem;
+        background:
+          radial-gradient(ellipse at 95% 0%, rgba(238, 92, 157, 0.2), transparent 24rem),
+          linear-gradient(135deg, var(--surface-strong), var(--surface));
+        box-shadow: var(--shadow);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.8rem;
+        padding: 0.25rem 0.65rem;
+        border: 1px solid rgba(195, 63, 127, 0.14);
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--link);
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 15ch;
+        margin: 0.8rem 0 0.5rem;
+        font-size: clamp(2.1rem, 5vw, 3.6rem);
+        font-weight: 800;
+        letter-spacing: -0.055em;
+        line-height: 1.05;
+      }
+
+      .hero p {
+        max-width: 64ch;
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(0.94rem, 1.5vw, 1.08rem);
+      }
+
+      .updated {
+        display: inline-block;
+        margin-top: 1.2rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(13rem, 0.31fr) minmax(0, 1fr);
+        align-items: start;
+        gap: 1.1rem;
+        margin: 1.1rem 0 3rem;
+      }
+
+      .contents,
+      .policy-section,
+      .contact-card {
+        border: 1px solid var(--border);
+        border-radius: 1.1rem;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .contents {
+        position: sticky;
+        top: 1rem;
+        display: grid;
+        gap: 0.2rem;
+        padding: 1rem;
+      }
+
+      .contents strong {
+        padding: 0.25rem 0.55rem 0.55rem;
+        font-size: 0.76rem;
+      }
+
+      .contents a {
+        padding: 0.42rem 0.55rem;
+        border-radius: 0.55rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+        text-decoration: none;
+      }
+
+      .contents a:hover { background: var(--accent-soft); color: var(--link); }
+
+      .article { display: grid; gap: 0.85rem; min-width: 0; }
+
+      .policy-section { padding: clamp(1.1rem, 3vw, 1.65rem); scroll-margin-top: 1rem; }
+
+      .policy-section h2 {
+        margin: 0 0 0.55rem;
+        font-size: 1.14rem;
+        font-weight: 760;
+        letter-spacing: -0.025em;
+        line-height: 1.3;
+      }
+
+      .policy-section p,
+      .policy-section ul {
+        margin: 0.55rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .policy-section ul { padding-left: 1.2rem; }
+      .policy-section li { padding-left: 0.2rem; }
+      .policy-section li + li { margin-top: 0.42rem; }
+      .policy-section strong { color: var(--text); }
+
+      .callout {
+        margin-top: 0.9rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid rgba(195, 63, 127, 0.16);
+        border-radius: 0.8rem;
+        background: var(--accent-soft);
+        color: var(--text);
+        font-size: 0.84rem;
+      }
+
+      .contact-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.15rem 1.35rem;
+      }
+
+      .contact-card p { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.82rem; }
+      .contact-card strong { font-size: 0.9rem; }
+      .contact-card a { flex: 0 0 auto; font-size: 0.82rem; font-weight: 700; }
+
+      .page-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0 0 1.5rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --page: #111827;
+          --surface: rgba(28, 38, 57, 0.9);
+          --surface-strong: #1b263a;
+          --text: #fff0f6;
+          --muted: #c0adbd;
+          --border: rgba(226, 218, 234, 0.13);
+          --accent: #ed72a8;
+          --accent-soft: rgba(201, 70, 133, 0.16);
+          --link: #f08abc;
+          --shadow: 0 18px 55px rgba(0, 0, 0, 0.18);
+        }
+
+        .hero { border-color: rgba(255, 255, 255, 0.08); }
+      }
+
+      @media (max-width: 760px) {
+        .sitebar,
+        main { width: min(100% - 1.5rem, 42rem); }
+
+        .sitebar { padding: 0.75rem 0; }
+        main { margin-top: 0.6rem; }
+        .layout { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+        .contents { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.1rem 0.3rem; }
+        .contents strong { grid-column: 1 / -1; }
+      }
+
+      @media (max-width: 420px) {
+        .sitebar,
+        main { width: calc(100% - 1.1rem); }
+
+        .brand { gap: 0.55rem; }
+        .brand-mark { width: 2.45rem; height: 2.45rem; }
+        .brand-name strong { font-size: 0.82rem; }
+        .brand-name span { font-size: 0.64rem; }
+        .back-link { min-height: 2.5rem; padding: 0.45rem 0.65rem; font-size: 0.72rem; }
+        .hero { border-radius: 1.1rem; }
+        .contact-card { align-items: flex-start; flex-direction: column; }
+        .page-footer { flex-direction: column; gap: 0.35rem; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="sitebar">
+      <a class="brand" href="../" aria-label="Bytecoin Zero wallet home">
+        <span class="brand-mark" aria-hidden="true">BCN</span>
+        <span class="brand-name"><strong>Bytecoin Zero</strong><span>Community wallet · bcn.money</span></span>
+      </a>
+      <a class="back-link" href="../">Return to wallet</a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="policy-title">
+        <span class="eyebrow">Data &amp; privacy</span>
+        <h1 id="policy-title">Privacy Policy</h1>
+        <p>This notice explains how the Bytecoin Zero browser wallet at bcn.money handles information when you visit the site or use wallet features. The wallet is self-custody software: your browser stores wallet data, while blockchain activity requires communication with a node.</p>
+        <span class="updated">Effective date: November 3, 2026</span>
+      </section>
+
+      <div class="layout">
+        <nav class="contents" aria-label="Privacy policy sections">
+          <strong>On this page</strong>
+          <a href="#scope">Scope</a>
+          <a href="#local-data">Data in your browser</a>
+          <a href="#network">Network and third parties</a>
+          <a href="#cookies">Cookies and analytics</a>
+          <a href="#use-sharing">Use and sharing</a>
+          <a href="#retention">Retention and deletion</a>
+          <a href="#security">Security</a>
+          <a href="#choices">Your choices</a>
+          <a href="#children">Children</a>
+          <a href="#changes-contact">Changes and contact</a>
+        </nav>
+
+        <div class="article">
+          <section class="policy-section" id="scope">
+            <h2>1. Scope and service</h2>
+            <p>This policy covers the Bytecoin Zero website and its browser-based wallet interface at <strong>bcn.money</strong>. It does not cover independent blockchain node operators, the public blockchain, your browser or device provider, the website hosting provider, or external websites. Those services have their own operators and privacy terms.</p>
+            <p>The wallet does not require you to create an account with Bytecoin Zero. The project does not operate a hosted account balance or custody service through this interface.</p>
+          </section>
+
+          <section class="policy-section" id="local-data">
+            <h2>2. Information stored in your browser</h2>
+            <p>Wallet operation uses browser storage on the device and browser profile where you opened the site. Depending on the features you use, this can include:</p>
+            <ul>
+              <li><strong>Encrypted wallet and recovery data:</strong> wallet files and saved recovery phrases are stored in IndexedDB in the app's encrypted format. Your wallet password is used by the browser-based wallet engine to unlock or encrypt wallet data.</li>
+              <li><strong>Wallet preferences:</strong> theme choice, selected node settings, wallet labels, hidden-address choices, remembered address counts, and saved-wallet metadata are stored in localStorage.</li>
+              <li><strong>Contacts:</strong> names and Bytecoin addresses you save are stored in localStorage for that wallet in this browser.</li>
+              <li><strong>Temporary session data:</strong> information needed while a wallet is open may be held in browser memory and is cleared when the page or wallet session ends.</li>
+            </ul>
+            <p>These local records are not automatically synchronized between your devices. Anyone with access to your unlocked device or browser profile may be able to access information available there. Do not rely on browser storage as your only backup.</p>
+          </section>
+
+          <section class="policy-section" id="network">
+            <h2>3. Blockchain nodes and other services</h2>
+            <p>To synchronize balances and transaction history or broadcast a transaction, the wallet communicates with the node selected in Settings. The app supplies default public nodes, and you may configure another HTTPS node. For nodes in bcn.money's curated relay, your browser sends requests to bcn.money and Cloudflare forwards them to the selected node. Cloudflare can receive your IP address and the relayed request; the node sees Cloudflare as its network peer. For custom nodes contacted directly, the node operator can receive your IP address and connection time. Depending on the protocol and action, requests can reveal wallet addresses, transaction details, or other blockchain-related information. HTTPS protects data in transit but does not prevent the relay or node operator from seeing requests it processes.</p>
+            <p>Node operators are independent of the Bytecoin Zero project. Their logging, retention, location, security, and privacy practices are outside the project's control. Public blockchain transactions are visible to network participants and generally cannot be removed after confirmation.</p>
+            <p>The website host or content-delivery provider may process standard request and security data, such as IP address, time, requested page or asset, browser type, and referring page, to deliver and protect the site. The provider and its retention practices depend on the deployment configuration.</p>
+            <p>If you follow an external link, that service receives the connection information normally sent by your browser. For example, opening a transaction in the Bytecoin explorer can disclose the transaction hash in the URL to the explorer. GitHub receives information when you browse the project or submit an issue. External services publish their own privacy policies.</p>
+          </section>
+
+          <section class="policy-section" id="cookies">
+            <h2>4. Cookies, analytics, and local storage</h2>
+            <p>The current wallet application does not intentionally set advertising or analytics cookies and does not include a product analytics service. On bcn.money, it uses a strictly necessary first-party session cookie containing only the ID of the selected node in the site's curated relay allowlist; the relay uses it to route wallet requests. The cookie contains no wallet secret. The app also uses localStorage and IndexedDB for the functional wallet data described above. Hosting or security providers may use their own technologies as part of delivering or protecting the website.</p>
+          </section>
+
+          <section class="policy-section" id="use-sharing">
+            <h2>5. How information is used and shared</h2>
+            <p>Browser-stored information is used to provide wallet features on your device. Blockchain-related requests are sent to the node you select so the wallet can synchronize and submit transactions. The website host may process request data for delivery, reliability, and security. The app does not sell personal information or share browser contacts with an advertising service.</p>
+            <p>Information you choose to post to public services, including a public GitHub issue, may be visible to others and handled under that service's terms. Never post recovery phrases, wallet passwords, private keys, audit secrets, wallet files, or other sensitive wallet details.</p>
+          </section>
+
+          <section class="policy-section" id="retention">
+            <h2>6. Retention and deletion</h2>
+            <p>Data stored by the wallet remains in your browser until you remove it, the browser evicts it, or the browser profile is deleted. You can remove local app data using your browser's site-data controls, but doing so may permanently delete wallet files, contacts, and settings. Export and verify a backup before clearing site data.</p>
+            <p>Deleting local data does not delete information already sent to a node operator, information you submitted to an external service, or confirmed transactions recorded on the public blockchain. Retention of hosting and node logs is determined by those independent operators.</p>
+          </section>
+
+          <section class="policy-section" id="security">
+            <h2>7. Security</h2>
+            <p>The wallet is designed to keep wallet files in browser storage in encrypted form, but no browser, device, website, or encryption system can be guaranteed secure. A compromised device, malicious browser extension, altered website code, weak password, or exposed recovery phrase can put wallet assets at risk. Keep your browser and device updated, use a strong unique password, and store a verified recovery backup offline.</p>
+            <div class="callout"><strong>Wallet support will never need your recovery phrase or password.</strong> Do not send secrets to the project, a node operator, or anyone claiming to provide support.</div>
+          </section>
+
+          <section class="policy-section" id="choices">
+            <h2>8. Your choices and privacy rights</h2>
+            <p>You can choose which node to use, avoid opening optional external links, and manage or clear browser-stored wallet preferences and data. You can also use browser controls to limit storage, though the wallet may not function correctly without it.</p>
+            <p>Privacy rights vary by location and may apply differently to data held locally by you, data processed by a node you select, and hosting-provider logs. The Bytecoin Zero interface does not provide a central account profile from which the project can retrieve your local wallet data. Contact the relevant node, hosting, or external service operator about information that service controls.</p>
+          </section>
+
+          <section class="policy-section" id="children">
+            <h2>9. Children</h2>
+            <p>This wallet is a general-purpose cryptocurrency tool and is not designed for children. The project does not knowingly request personal information from children through an account system.</p>
+          </section>
+
+          <section class="policy-section" id="changes-contact">
+            <h2>10. Changes and contact</h2>
+            <p>This policy may be updated when the wallet, its hosting, or its data practices change. The effective date at the top indicates the latest revision. Review this page periodically.</p>
+            <p>For questions about this notice or the wallet's software, contact the community through the project issue tracker. GitHub issues may be public, so do not include personal information or wallet secrets.</p>
+            <div class="contact-card">
+              <div><strong>Questions about this policy?</strong><p>Contact the Bytecoin Zero community without sharing private wallet information.</p></div>
+              <a href="https://github.com/bytecoinworld/bytecoin-zero/issues" target="_blank" rel="noopener noreferrer">Project support ↗</a>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <footer class="page-footer">
+        <span>Bytecoin Zero · Community-maintained software</span>
+        <a href="../">Return to bcn.money</a>
+      </footer>
+    </main>
+  </body>
+</html>

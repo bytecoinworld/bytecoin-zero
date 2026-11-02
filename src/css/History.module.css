@@ -781,3 +781,53 @@
     transition: none;
   }
 }
+@media (max-width: 390px) {
+  .transfer {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .transferLeft {
+    flex: 1 1 10rem;
+    min-width: 0;
+  }
+
+  .transferRight {
+    align-items: flex-start;
+    flex: 1 1 7rem;
+    padding-left: 0;
+  }
+
+  .transferAmount {
+    overflow-wrap: anywhere;
+  }
+
+  .txMetadata {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'hash'
+      'confirmation'
+      'time'
+      'fee';
+    gap: 0.4rem;
+  }
+
+  .txFee {
+    justify-self: start;
+  }
+
+  .txActions {
+    flex-wrap: wrap;
+  }
+
+  .transactionDetailsButton,
+  .txHashCopy,
+  .detailsCloseButton {
+    min-height: 2.75rem;
+  }
+
+  .detailsDialog {
+    max-height: 92dvh;
+  }
+}

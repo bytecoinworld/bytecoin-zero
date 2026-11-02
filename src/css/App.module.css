@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--color-text);
 }
 
@@ -133,6 +134,12 @@
 }
 
 @media (max-width: 760px) {
+  :global(input:not([type='checkbox']):not([type='radio']):not([type='range'])),
+  :global(select),
+  :global(textarea) {
+    font-size: 16px;
+  }
+
   .topbar {
     min-height: 4rem;
   }
@@ -143,7 +150,7 @@
 
   .helpToggle,
   .themeToggle {
-    min-height: 2.35rem;
+    min-height: 2.75rem;
     padding: 0.45rem 0.65rem;
   }
 
@@ -151,5 +158,51 @@
     justify-content: center;
     width: calc(100% - 2rem);
     text-align: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar {
+    gap: 0.4rem;
+    padding-right: 0.65rem;
+    padding-left: 0.65rem;
+  }
+
+  .brand {
+    min-width: 0;
+    gap: 0.45rem;
+  }
+
+  .brand img {
+    flex: 0 0 auto;
+  }
+
+  .brand div {
+    min-width: 0;
+  }
+
+  .brand strong {
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .brand span {
+    display: none;
+  }
+
+  .topbarActions {
+    flex: 0 0 auto;
+    gap: 0.3rem;
+  }
+
+  .helpToggle,
+  .themeToggle {
+    min-width: 2.75rem;
+    padding: 0.45rem;
+  }
+
+  .themeToggle {
+    gap: 0;
+    font-size: 0;
   }
 }

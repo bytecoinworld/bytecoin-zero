@@ -739,6 +739,20 @@
     padding-top: 1rem;
     border-top: 1px solid rgba(193, 205, 235, 0.18);
   }
+
+  .restoreMethod,
+  .pasteButton,
+  .copyPhraseButton,
+  .backButton,
+  .wordToolbar select,
+  .controls button {
+    min-height: 2.75rem;
+  }
+
+  .seedWordField input {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -771,5 +785,11 @@
   .controls {
     display: grid;
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .welcomeFeatures,
+  .walletChoices {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -30,6 +30,8 @@ export type IconName =
   | 'plus'
   | 'check'
   | 'close'
+  | 'menu'
+  | 'github'
   | 'edit'
   | 'trash'
   | 'warning'
@@ -65,6 +67,8 @@ const icons: Record<IconName, React.ReactNode> = {
   plus: <g><path d='M12 5v14M5 12h14'/></g>,
   check: <path d='m5 12 4 4L19 6'/>,
   close: <g><path d='m18 6-12 12M6 6l12 12'/></g>,
+  menu: <g><path d='M4 6h16M4 12h16M4 18h16'/></g>,
+  github: <g><path d='M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77 5.44 5.44 0 0 0 3.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22'/></g>,
   edit: <g><path d='m15 5 4 4M4 20l4-.8L19 8a2.1 2.1 0 0 0-3-3L5 16l-1 4Z'/></g>,
   trash: <g><path d='M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6'/></g>,
   warning: <g><path d='M12 3 2.8 19h18.4L12 3Z'/><path d='M12 9v4m0 3h.01'/></g>,

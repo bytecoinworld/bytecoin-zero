@@ -494,3 +494,43 @@
     justify-content: flex-start;
   }
 }
+@media (max-width: 390px) {
+  .receivePrimary,
+  .qrPanel {
+    min-width: 0;
+  }
+
+  .qrCode {
+    box-sizing: border-box;
+    width: min(100%, 17.5rem);
+  }
+
+  .qrCode canvas {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .qrActions {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .qrActions button {
+    min-height: 2.75rem;
+  }
+
+  .address {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+  }
+
+  .address > :last-child {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .addressItemActions button,
+  .hiddenAddressesToggle,
+  .controls > button {
+    min-height: 2.75rem;
+  }
+}
