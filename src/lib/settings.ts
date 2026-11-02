@@ -114,6 +114,12 @@ function usesLocalNodeProxy(): boolean {
     isLoopbackHost(window.location.hostname);
 }
 
+function withExplicitPort(address: string): string {
+  const parsed = new URL(address);
+  const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+  return `${parsed.protocol}//${parsed.hostname}:${port}`;
+}
+
 export function getNodeRpcAddress(node: string, useLocalProxy = usesLocalNodeProxy()): string {
   const normalized = normalizeNodeAddress(node);
   const hostedProxyNodeId = window.location.hostname.toLowerCase() === HOSTED_PROXY_HOST ?
@@ -130,12 +136,12 @@ export function getNodeRpcAddress(node: string, useLocalProxy = usesLocalNodePro
 export function getNodeEngineAddress(node: string, useLocalProxy = usesLocalNodeProxy()): string {
   const normalized = normalizeNodeAddress(node);
   if (selectHostedProxyNode(normalized)) {
-    return window.location.origin;
+    return withExplicitPort(window.location.origin);
   }
   if (useLocalProxy && normalized === ALTERNATE_NODE) {
     return `${localProxyHost()}:${localProxyPort()}`;
   }
-  return normalized;
+  return withExplicitPort(normalized);
 }
 
 export function saveNodeSettings(settings: INodeSettings): void {

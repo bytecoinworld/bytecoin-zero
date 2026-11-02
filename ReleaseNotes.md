@@ -16,6 +16,7 @@ Bytecoin Zero 0.2.1 brings a more complete mobile wallet experience, clearer wal
 
 - Configure public nodes and use automatic failover or optional rotation.
 - The `bcn.money` Cloudflare Pages deployment includes a same-origin relay for the built-in nodes in the curated allowlist. This avoids browser CORS restrictions for those nodes.
+- Ensure the wallet engine receives an explicit HTTPS port for hosted-relay connections.
 - Custom nodes must allow browser CORS or be added to the maintained relay allowlist. The relay does not forward to arbitrary URLs.
 - A node passing the reachability check may still be incompatible with the wallet's synchronization protocol.
 

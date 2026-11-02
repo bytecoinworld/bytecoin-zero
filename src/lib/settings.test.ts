@@ -66,7 +66,8 @@ describe('getNodeRpcAddress', () => {
     expect(getNodeRpcAddress(ALTERNATE_NODE, true)).toBe(window.location.origin);
     expect(getNodeEngineAddress(ALTERNATE_NODE, true)).toBe(`127.0.0.1:${port}`);
     expect(getNodeRpcAddress(ALTERNATE_NODE, false)).toBe(ALTERNATE_NODE);
-    expect(getNodeEngineAddress(ALTERNATE_NODE, false)).toBe(ALTERNATE_NODE);
+    expect(getNodeEngineAddress(ALTERNATE_NODE, false)).toBe('https://node.bytecoin.network:443');
+    expect(getNodeEngineAddress('https://custom.example:8443', false)).toBe('https://custom.example:8443');
   });
 });
 
