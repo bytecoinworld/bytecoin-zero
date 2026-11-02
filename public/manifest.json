@@ -1,6 +1,6 @@
 {
-  "short_name": "Bytecoin Zero v0.1",
-  "name": "End-to-end secure Bytecoin wallet",
+  "short_name": "Bytecoin Zero",
+  "name": "Bytecoin Zero — Community Wallet",
   "icons": [
     {
       "src": "favicon.ico",
@@ -16,6 +16,6 @@
   "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#ee4287",
-  "background_color": "#ffffff"
+  "theme_color": "#f3f6fa",
+  "background_color": "#f3f6fa"
 }

@@ -4,26 +4,60 @@
  */
 
 :root {
-  --color-theme: #ee4287;
-  --big-shadow: 0 0 5px rgba(0,0,0,0.3);
-
-  /* bootstrap */
-  --color-text: #212529;
-  --color-primary: #007bff;
-  --color-secondary: #6c757d;
-  --color-success: #28a745;
-  --color-success-light: #c1f0cc;
-  --color-danger: #dc3545;
-  --color-danger-light: #f6ccd0;
-  --color-warning: #ffc107;
-  --color-info: #17a2b8;
-  --color-light: #f8f9fa;
-  --color-dark: #343a40;
-  --color-muted: #6c757d;
+  color-scheme: light;
+  --color-theme: #d32f78;
+  --color-text: #2a1722;
+  --color-primary: #bd286d;
+  --color-primary-soft: #ffebf3;
+  --color-secondary: #705967;
+  --color-success: #16856d;
+  --color-success-light: #e0f3ed;
+  --color-danger: #c43f52;
+  --color-danger-light: #fae3e7;
+  --color-warning: #98680d;
+  --color-warning-light: #fff6df;
+  --color-info: #287c91;
+  --color-light: #fff0f6;
+  --color-dark: #2a1722;
+  --color-muted: #806b78;
+  --button-primary-bg: #c62872;
+  --button-primary-hover-bg: #a92060;
+  --button-shadow: rgba(198, 40, 114, 0.18);
+  --page-background: #fff7fa;
+  --surface: #ffffff;
+  --surface-muted: #fff0f6;
+  --border-color: #f1d7e3;
+  --big-shadow: 0 14px 40px rgba(120, 27, 69, 0.08);
 
   --sans-serif-fonts: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --monospace-fonts: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --emoji-fonts: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-text: #fff0f6;
+  --color-primary: #ff7caf;
+  --color-primary-soft: #35243d;
+  --color-secondary: #e0bfd0;
+  --color-success: #71d3b2;
+  --color-success-light: #193c35;
+  --color-danger: #ff94a2;
+  --color-danger-light: #48252e;
+  --color-warning: #f3ca73;
+  --color-warning-light: #45391e;
+  --color-info: #7dcedb;
+  --color-light: #2a1b25;
+  --color-dark: #fff0f6;
+  --color-muted: #c3a6b6;
+  --button-primary-bg: #cf3478;
+  --button-primary-hover-bg: #e3478b;
+  --button-shadow: rgba(236, 65, 139, 0.2);
+  --page-background: #111a2b;
+  --surface: #1b2438;
+  --surface-muted: #202a40;
+  --border-color: #303a54;
+  --big-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
 }
 
 /* bootstrap container code */
@@ -54,13 +88,22 @@
 }
 
 body {
+  margin: 0;
+  font-family: var(--sans-serif-fonts);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   min-height: 100vh;
-  background: linear-gradient(-45deg, #EE7752, #E73C7E, #23A6D5, #23D5AB) fixed 50% 50%;
-  background-size: 400% 400%;
+  background: var(--page-background);
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 #loading {
-  color: white;
+  color: var(--color-text);
 }
 
 button.link-like {
@@ -84,4 +127,52 @@ button.link-like:not([tabindex]):focus {
 button.link-like:disabled {
   color: var(--color-muted);
   cursor: not-allowed;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+button:not(.link-like) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(.link-like):not(:disabled):hover {
+  box-shadow: 0 6px 16px var(--button-shadow);
+}
+
+button:not(.link-like):not(:disabled):active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+@media (max-width: 575px) {
+  .container {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

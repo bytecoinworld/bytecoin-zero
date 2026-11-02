@@ -4,19 +4,302 @@
  */
 
 .receiveForm {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  margin: 0 auto;
+  color: var(--color-text);
+}
+
+.receivePrimary {
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: var(--big-shadow);
+}
+
+.receiveHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.receiveHeading h2 {
+  margin: 0 0 0.35rem;
+  color: var(--color-text);
+  font-size: 1.25rem;
+}
+
+.receiveHeading p {
+  margin: 0;
+  color: var(--color-muted);
+  white-space: normal;
+}
+
+.addressSelect {
+  display: grid;
+  gap: 0.25rem;
+  min-width: min(100%, 12rem);
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
+
+.addressSelect select {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.6rem;
+  background: var(--surface);
+  color: var(--color-text);
+}
+
+.qrPanel {
+  display: grid;
+  justify-items: center;
+  gap: 0.8rem;
+  margin: 1.5rem auto 0;
+  max-width: 100%;
+}
+
+.qrCode {
+  max-width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.9rem;
+  background: #fff;
+  line-height: 0;
+  box-shadow: 0 12px 28px rgba(13, 20, 34, 0.14);
+}
+
+.qrCode canvas {
+  display: block;
+  width: 280px;
+  max-width: 100%;
+  height: auto;
+}
+
+.qrActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  width: min(100%, 24rem);
+}
+
+.qrActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+}
+
+.qrActions button:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.qrActions button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.primaryAddress,
+.addressText code {
+  color: var(--color-text);
+  font-family: var(--monospace-fonts);
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.primaryAddress {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(var(--surface-muted), var(--surface-muted)) padding-box,
+    linear-gradient(
+      90deg,
+      var(--color-primary) 0%,
+      var(--color-info) 16.67%,
+      var(--color-secondary) 33.33%,
+      var(--color-primary) 50%,
+      var(--color-info) 66.67%,
+      var(--color-secondary) 83.33%,
+      var(--color-primary) 100%
+    ) border-box;
+  background-size: 100% 100%, 200% 100%;
+  animation: primaryAddressFrameFlow 8s linear infinite;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  line-height: 1.7;
+  text-align: center;
+  user-select: text;
+}
+
+@keyframes primaryAddressFrameFlow {
+  from {
+    background-position: 0 0, 0% 50%;
+  }
+
+  to {
+    background-position: 0 0, 100% 50%;
+  }
+}
+
+.addressActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.copyStatus {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.addressActions button,
+.addAddress,
+.dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.addressActions button:hover:not(:disabled),
+.addAddress:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.addressesHeading {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.addressesHeadingRow {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.preferencesNote,
+.preferencesStatus,
+.emptyAddresses {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.preferencesStatus {
+  color: var(--color-primary);
+}
+
+.addressCreationError {
+  color: var(--color-danger);
 }
 
 .addresses {
+  display: grid;
+  gap: 0.65rem;
+  padding: 2px;
   max-height: 30vh;
-  overflow-y: scroll;
+  overflow-y: auto;
+  scrollbar-color: var(--color-primary) var(--surface-muted);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.addresses::-webkit-scrollbar {
+  width: 0.7rem;
+}
+
+.addresses::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.addresses::-webkit-scrollbar-thumb {
+  border: 2px solid var(--surface-muted);
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+.addresses::-webkit-scrollbar-thumb:hover {
+  background: var(--button-primary-hover-bg);
 }
 
 .address {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  transition: border-color 180ms ease;
 }
 
-.address + .address {
-  margin-top: 1rem;
+.addressAvatarColored {
+  border-color: var(--avatar-color);
+}
+
+.addressAvatarColored::after {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--avatar-color);
+  box-shadow: 0 0 6px var(--avatar-color);
+  content: '';
+  pointer-events: none;
+  offset-path: inset(0 round 0.75rem);
+  offset-anchor: center;
+  offset-distance: 0%;
+  offset-rotate: auto;
+  animation: addressAvatarBorderOrbit 8s linear infinite;
+  animation-delay: var(--avatar-animation-delay, 0s);
+}
+
+@keyframes addressAvatarBorderOrbit {
+  to {
+    offset-distance: 100%;
+  }
 }
 
 .addressIcon {
@@ -30,32 +313,184 @@
 }
 
 .addressData {
-  display: flex;
-  align-items: center;
+  min-width: 0;
 }
 
 .addressText {
-  font-size: small;
-  white-space: normal;
-  word-break: break-all;
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.share {
+.addressLabelRow {
   display: flex;
   align-items: center;
-  margin-left: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.addressNumber {
+  flex: 0 0 auto;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.addressLabel {
+  min-width: 0;
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.addressLabelInput {
+  width: min(100%, 16rem);
+  min-width: 8rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.addressText code {
+  color: var(--color-muted);
+  font-size: 0.74rem;
+}
+
+.addressItemActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.addressItemActions button,
+.hiddenAddressesToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.2rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.55rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+}
+
+.addressItemActions button:hover:not(:disabled),
+.hiddenAddressesToggle:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.addressItemActions button:focus-visible,
+.hiddenAddressesToggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.addressItemActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.addressItemActions .hideAddressButton {
+  color: var(--color-danger);
+}
+
+.addressItemActions .hideAddressButton:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.hiddenAddresses {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.hiddenAddresses .addresses {
+  width: 100%;
+}
+
+.hiddenAddressesToggle {
+  color: var(--color-muted);
+}
+
+.hiddenAddressesChevron {
+  display: inline-flex;
+  transform: rotate(90deg);
+  transition: transform 140ms ease;
+}
+
+.hiddenAddressesToggle[aria-expanded='true'] .hiddenAddressesChevron {
+  transform: rotate(-90deg);
+}
+
+.hiddenAddress {
+  width: 100%;
+  opacity: 0.78;
 }
 
 .controls {
-  margin-top: 1rem;
   display: flex;
   justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.addAddress {
-  padding: 0 0.5rem;
+.addAddress:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .dismiss {
-  padding: 0 0.5rem;
+  margin-left: auto;
+  border-color: var(--button-primary-bg);
+  background: var(--button-primary-bg);
+  color: #fff;
+}
+
+@media (max-width: 575px) {
+  .receivePrimary {
+    padding: 1rem;
+  }
+
+  .qrCode canvas {
+    width: min(280px, 76vw);
+    height: auto;
+  }
+
+  .addressIcon {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+  }
+
+  .address {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
+  .addressItemActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
 }

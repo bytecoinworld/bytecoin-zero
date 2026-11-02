@@ -53,7 +53,12 @@ var ENVIRONMENT_HAS_NODE = false;
 var ENVIRONMENT_IS_SHELL = false;
 ENVIRONMENT_IS_WEB = typeof window === 'object';
 ENVIRONMENT_IS_WORKER = typeof importScripts === 'function';
-ENVIRONMENT_HAS_NODE = typeof process === 'object' && typeof require === 'function';
+// A web environment like Electron.js can have Node enabled, so we must
+// distinguish between Node-enabled environments and Node environments per se.
+// This will allow the former to do things like mount NODEFS.
+// Extended check using process.versions fixes issue #8816.
+// (Also makes redundant the original check that 'require' is a function.)
+ENVIRONMENT_HAS_NODE = typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node === 'string';
 ENVIRONMENT_IS_NODE = ENVIRONMENT_HAS_NODE && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER;
 ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
 
@@ -80,6 +85,12 @@ function locateFile(path) {
   }
 }
 
+// Hooks that are implemented differently in different runtime environments.
+var read_,
+    readAsync,
+    readBinary,
+    setWindowTitle;
+
 if (ENVIRONMENT_IS_NODE) {
   scriptDirectory = __dirname + '/';
 
@@ -88,7 +99,7 @@ if (ENVIRONMENT_IS_NODE) {
   var nodeFS;
   var nodePath;
 
-  Module['read'] = function shell_read(filename, binary) {
+  read_ = function shell_read(filename, binary) {
     var ret;
       if (!nodeFS) nodeFS = require('fs');
       if (!nodePath) nodePath = require('path');
@@ -97,8 +108,8 @@ if (ENVIRONMENT_IS_NODE) {
     return binary ? ret : ret.toString();
   };
 
-  Module['readBinary'] = function readBinary(filename) {
-    var ret = Module['read'](filename, true);
+  readBinary = function readBinary(filename) {
+    var ret = read_(filename, true);
     if (!ret.buffer) {
       ret = new Uint8Array(ret);
     }
@@ -136,12 +147,12 @@ if (ENVIRONMENT_IS_SHELL) {
 
 
   if (typeof read != 'undefined') {
-    Module['read'] = function shell_read(f) {
+    read_ = function shell_read(f) {
       return read(f);
     };
   }
 
-  Module['readBinary'] = function readBinary(f) {
+  readBinary = function readBinary(f) {
     var data;
     if (typeof readbuffer === 'function') {
       return new Uint8Array(readbuffer(f));
@@ -180,7 +191,7 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
   }
 
 
-  Module['read'] = function shell_read(url) {
+  read_ = function shell_read(url) {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', url, false);
       xhr.send(null);
@@ -188,7 +199,7 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
   };
 
   if (ENVIRONMENT_IS_WORKER) {
-    Module['readBinary'] = function readBinary(url) {
+    readBinary = function readBinary(url) {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url, false);
         xhr.responseType = 'arraybuffer';
@@ -197,7 +208,7 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
     };
   }
 
-  Module['readAsync'] = function readAsync(url, onload, onerror) {
+  readAsync = function readAsync(url, onload, onerror) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.responseType = 'arraybuffer';
@@ -212,7 +223,7 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
     xhr.send(null);
   };
 
-  Module['setWindowTitle'] = function(title) { document.title = title };
+  setWindowTitle = function(title) { document.title = title };
 } else
 {
   throw new Error('environment detection error');
@@ -238,10 +249,23 @@ for (key in moduleOverrides) {
 moduleOverrides = undefined;
 
 // perform assertions in shell.js after we set up out() and err(), as otherwise if an assertion fails it cannot print the message
+// Assertions on removed incoming Module JS APIs.
 assert(typeof Module['memoryInitializerPrefixURL'] === 'undefined', 'Module.memoryInitializerPrefixURL option was removed, use Module.locateFile instead');
 assert(typeof Module['pthreadMainPrefixURL'] === 'undefined', 'Module.pthreadMainPrefixURL option was removed, use Module.locateFile instead');
 assert(typeof Module['cdInitializerPrefixURL'] === 'undefined', 'Module.cdInitializerPrefixURL option was removed, use Module.locateFile instead');
 assert(typeof Module['filePackagePrefixURL'] === 'undefined', 'Module.filePackagePrefixURL option was removed, use Module.locateFile instead');
+assert(typeof Module['read'] === 'undefined', 'Module.read option was removed (modify read_ in JS)');
+assert(typeof Module['readAsync'] === 'undefined', 'Module.readAsync option was removed (modify readAsync in JS)');
+assert(typeof Module['readBinary'] === 'undefined', 'Module.readBinary option was removed (modify readBinary in JS)');
+assert(typeof Module['setWindowTitle'] === 'undefined', 'Module.setWindowTitle option was removed (modify setWindowTitle in JS)');
+// Assertions on removed outgoing Module JS APIs.
+Object.defineProperty(Module, 'read', { get: function() { abort('Module.read has been replaced with plain read') } });
+Object.defineProperty(Module, 'readAsync', { get: function() { abort('Module.readAsync has been replaced with plain readAsync') } });
+Object.defineProperty(Module, 'readBinary', { get: function() { abort('Module.readBinary has been replaced with plain readBinary') } });
+// TODO enable when SDL2 is fixed Object.defineProperty(Module, 'setWindowTitle', { get: function() { abort('Module.setWindowTitle has been replaced with plain setWindowTitle') } });
+
+
+// TODO remove when SDL2 is fixed; also add the above assertion
 
 
 
@@ -496,11 +520,11 @@ var tempRet0 = 0;
 
 var setTempRet0 = function(value) {
   tempRet0 = value;
-}
+};
 
 var getTempRet0 = function() {
   return tempRet0;
-}
+};
 
 function getCompilerSetting(name) {
   throw 'You must build with -s RETAIN_COMPILER_SETTINGS=1 for getCompilerSetting or emscripten_get_compiler_setting to work';
@@ -539,6 +563,25 @@ if (typeof WebAssembly !== 'object') {
 }
 
 
+// In MINIMAL_RUNTIME, setValue() and getValue() are only available when building with safe heap enabled, for heap safety checking.
+// In traditional runtime, setValue() and getValue() are always available (although their use is highly discouraged due to perf penalties)
+
+/** @type {function(number, number, string, boolean=)} */
+function setValue(ptr, value, type, noSafe) {
+  type = type || 'i8';
+  if (type.charAt(type.length-1) === '*') type = 'i32'; // pointers are 32-bit
+    switch(type) {
+      case 'i1': HEAP8[((ptr)>>0)]=value; break;
+      case 'i8': HEAP8[((ptr)>>0)]=value; break;
+      case 'i16': HEAP16[((ptr)>>1)]=value; break;
+      case 'i32': HEAP32[((ptr)>>2)]=value; break;
+      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[((ptr)>>2)]=tempI64[0],HEAP32[(((ptr)+(4))>>2)]=tempI64[1]); break;
+      case 'float': HEAPF32[((ptr)>>2)]=value; break;
+      case 'double': HEAPF64[((ptr)>>3)]=value; break;
+      default: abort('invalid type for setValue: ' + type);
+    }
+}
+
 /** @type {function(number, string, boolean=)} */
 function getValue(ptr, type, noSafe) {
   type = type || 'i8';
@@ -555,6 +598,7 @@ function getValue(ptr, type, noSafe) {
     }
   return null;
 }
+
 
 
 
@@ -646,22 +690,6 @@ function cwrap(ident, returnType, argTypes, opts) {
   return function() {
     return ccall(ident, returnType, argTypes, arguments, opts);
   }
-}
-
-/** @type {function(number, number, string, boolean=)} */
-function setValue(ptr, value, type, noSafe) {
-  type = type || 'i8';
-  if (type.charAt(type.length-1) === '*') type = 'i32'; // pointers are 32-bit
-    switch(type) {
-      case 'i1': HEAP8[((ptr)>>0)]=value; break;
-      case 'i8': HEAP8[((ptr)>>0)]=value; break;
-      case 'i16': HEAP16[((ptr)>>1)]=value; break;
-      case 'i32': HEAP32[((ptr)>>2)]=value; break;
-      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[((ptr)>>2)]=tempI64[0],HEAP32[(((ptr)+(4))>>2)]=tempI64[1]); break;
-      case 'float': HEAPF32[((ptr)>>2)]=value; break;
-      case 'double': HEAPF64[((ptr)>>3)]=value; break;
-      default: abort('invalid type for setValue: ' + type);
-    }
 }
 
 var ALLOC_NORMAL = 0; // Tries to use _malloc()
@@ -1244,11 +1272,11 @@ function updateGlobalBufferViews() {
 
 
 var STATIC_BASE = 1024,
-    STACK_BASE = 162240,
+    STACK_BASE = 152928,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 5405120,
-    DYNAMIC_BASE = 5405120,
-    DYNAMICTOP_PTR = 162208;
+    STACK_MAX = 5395808,
+    DYNAMIC_BASE = 5395808,
+    DYNAMICTOP_PTR = 152896;
 
 assert(STACK_BASE % 16 === 0, 'stack must start aligned');
 assert(DYNAMIC_BASE % 16 === 0, 'heap must start aligned');
@@ -1271,25 +1299,24 @@ assert(typeof Int32Array !== 'undefined' && typeof Float64Array !== 'undefined' 
 
 
 
-
-// Use a provided buffer, if there is one, or else allocate a new one
-if (Module['buffer']) {
-  buffer = Module['buffer'];
-  assert(buffer.byteLength === INITIAL_TOTAL_MEMORY, 'provided buffer should be ' + INITIAL_TOTAL_MEMORY + ' bytes, but it is ' + buffer.byteLength);
-} else {
-  // Use a WebAssembly memory where available
-  if (typeof WebAssembly === 'object' && typeof WebAssembly.Memory === 'function') {
-    assert(INITIAL_TOTAL_MEMORY % WASM_PAGE_SIZE === 0);
-    wasmMemory = new WebAssembly.Memory({ 'initial': INITIAL_TOTAL_MEMORY / WASM_PAGE_SIZE });
-    buffer = wasmMemory.buffer;
-  } else
-  {
-    buffer = new ArrayBuffer(INITIAL_TOTAL_MEMORY);
+  if (Module['wasmMemory']) {
+    wasmMemory = Module['wasmMemory'];
+  } else {
+    wasmMemory = new WebAssembly.Memory({
+      'initial': INITIAL_TOTAL_MEMORY / WASM_PAGE_SIZE
+    });
   }
-  assert(buffer.byteLength === INITIAL_TOTAL_MEMORY);
-}
-updateGlobalBufferViews();
 
+
+if (wasmMemory) {
+  buffer = wasmMemory.buffer;
+}
+
+// If the user provides an incorrect length, just use that length instead rather than providing the user to
+// specifically provide the memory length with Module['TOTAL_MEMORY'].
+INITIAL_TOTAL_MEMORY = buffer.byteLength;
+assert(INITIAL_TOTAL_MEMORY % WASM_PAGE_SIZE === 0);
+updateGlobalBufferViews();
 
 HEAP32[DYNAMICTOP_PTR>>2] = DYNAMIC_BASE;
 
@@ -1302,10 +1329,13 @@ function writeStackCookie() {
 }
 
 function checkStackCookie() {
-  if (HEAPU32[(STACK_MAX >> 2)-1] != 0x02135467 || HEAPU32[(STACK_MAX >> 2)-2] != 0x89BACDFE) {
-    abort('Stack overflow! Stack cookie has been overwritten, expected hex dwords 0x89BACDFE and 0x02135467, but received 0x' + HEAPU32[(STACK_MAX >> 2)-2].toString(16) + ' ' + HEAPU32[(STACK_MAX >> 2)-1].toString(16));
+  var cookie1 = HEAPU32[(STACK_MAX >> 2)-1];
+  var cookie2 = HEAPU32[(STACK_MAX >> 2)-2];
+  if (cookie1 != 0x02135467 || cookie2 != 0x89BACDFE) {
+    abort('Stack overflow! Stack cookie has been overwritten, expected hex dwords 0x89BACDFE and 0x02135467, but received 0x' + cookie2.toString(16) + ' ' + cookie1.toString(16));
   }
   // Also test the global address 0 for integrity.
+  // We don't do this with ASan because ASan does its own checks for this.
   if (HEAP32[0] !== 0x63736d65 /* 'emsc' */) abort('Runtime error: The application has corrupted its heap memory area (address zero)!');
 }
 
@@ -1363,9 +1393,9 @@ function preRun() {
   callRuntimeCallbacks(__ATPRERUN__);
 }
 
-function ensureInitRuntime() {
+function initRuntime() {
   checkStackCookie();
-  if (runtimeInitialized) return;
+  assert(!runtimeInitialized);
   runtimeInitialized = true;
   
   callRuntimeCallbacks(__ATINIT__);
@@ -1601,8 +1631,8 @@ function getBinary() {
     if (Module['wasmBinary']) {
       return new Uint8Array(Module['wasmBinary']);
     }
-    if (Module['readBinary']) {
-      return Module['readBinary'](wasmBinaryFile);
+    if (readBinary) {
+      return readBinary(wasmBinaryFile);
     } else {
       throw "both async and sync fetching of the wasm failed";
     }
@@ -1631,6 +1661,8 @@ function getBinaryPromise() {
   });
 }
 
+
+
 // Create the wasm instance.
 // Receives the wasm imports, returns the exports.
 function createWasm(env) {
@@ -1656,6 +1688,7 @@ function createWasm(env) {
   }
   addRunDependency('wasm-instantiate');
 
+
   // Async compilation can be confusing when an error on the page overwrites Module
   // (for example, if the order of elements is wrong, and the one defining Module is
   // later), so we save Module and check it later.
@@ -1669,6 +1702,7 @@ function createWasm(env) {
       // When the regression is fixed, can restore the above USE_PTHREADS-enabled path.
     receiveInstance(output['instance']);
   }
+
 
   function instantiateArrayBuffer(receiver) {
     return getBinaryPromise().then(function(binary) {
@@ -1685,14 +1719,16 @@ function createWasm(env) {
         typeof WebAssembly.instantiateStreaming === 'function' &&
         !isDataURI(wasmBinaryFile) &&
         typeof fetch === 'function') {
-      return WebAssembly.instantiateStreaming(fetch(wasmBinaryFile, { credentials: 'same-origin' }), info)
-        .then(receiveInstantiatedSource, function(reason) {
-          // We expect the most common failure cause to be a bad MIME type for the binary,
-          // in which case falling back to ArrayBuffer instantiation should work.
-          err('wasm streaming compile failed: ' + reason);
-          err('falling back to ArrayBuffer instantiation');
-          instantiateArrayBuffer(receiveInstantiatedSource);
-        });
+      fetch(wasmBinaryFile, { credentials: 'same-origin' }).then(function (response) {
+        return WebAssembly.instantiateStreaming(response, info)
+          .then(receiveInstantiatedSource, function(reason) {
+            // We expect the most common failure cause to be a bad MIME type for the binary,
+            // in which case falling back to ArrayBuffer instantiation should work.
+            err('wasm streaming compile failed: ' + reason);
+            err('falling back to ArrayBuffer instantiation');
+            instantiateArrayBuffer(receiveInstantiatedSource);
+          });
+      });
     } else {
       return instantiateArrayBuffer(receiveInstantiatedSource);
     }
@@ -1702,7 +1738,8 @@ function createWasm(env) {
   // to any other async startup actions they are performing.
   if (Module['instantiateWasm']) {
     try {
-      return Module['instantiateWasm'](info, receiveInstance);
+      var exports = Module['instantiateWasm'](info, receiveInstance);
+      return exports;
     } catch(e) {
       err('Module.instantiateWasm callback failed with error: ' + e);
       return false;
@@ -1723,8 +1760,8 @@ Module['asm'] = function(global, env, providedBuffer) {
   ;
   // import table
   env['table'] = wasmTable = new WebAssembly.Table({
-    'initial': 2765,
-    'maximum': 2765,
+    'initial': 2541,
+    'maximum': 2541,
     'element': 'anyfunc'
   });
   // With the wasm backend __memory_base and __table_base and only needed for
@@ -1738,18 +1775,24 @@ Module['asm'] = function(global, env, providedBuffer) {
   return exports;
 };
 
+// Globals used by JS i64 conversions
+var tempDouble;
+var tempI64;
+
 // === Body ===
 
 var ASM_CONSTS = [function() { let arr = new Uint8Array(1); if (typeof window === 'object') window.crypto.getRandomValues(arr); else self.crypto.getRandomValues(arr); return arr[0]; },
  function($0, $1, $2) { Module.worker_block_prepare($0, $1, $2); },
  function($0, $1, $2) { Module.worker_transaction_prepare($0, $1, $2); },
- function($0, $1, $2, $3, $4, $5, $6, $7, $8, $9) { return Module.cn_fetch($0, $1, $2, $3, $4, $5, $6, $7, $8, $9); },
- function($0) { Module.cn_fetch_cancel($0); },
- function($0, $1, $2, $3, $4, $5) { return Module.cn_file_op($0, $1, $2, $3, $4, $5); },
+ function($0, $1, $2, $3, $4, $5) { Module.cn_file_op($0, $1, $2, $3, $4, $5); },
  function($0) { Module.cn_file_cancel($0); }];
 
 function _emscripten_asm_const_ii(code, a0) {
   return ASM_CONSTS[code](a0);
+}
+
+function _emscripten_asm_const_iiiiiii(code, a0, a1, a2, a3, a4, a5) {
+  return ASM_CONSTS[code](a0, a1, a2, a3, a4, a5);
 }
 
 function _emscripten_asm_const_iiii(code, a0, a1, a2) {
@@ -1760,18 +1803,10 @@ function _emscripten_asm_const_i(code) {
   return ASM_CONSTS[code]();
 }
 
-function _emscripten_asm_const_iiiiiiiiiii(code, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
-  return ASM_CONSTS[code](a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-}
-
-function _emscripten_asm_const_iiiiiii(code, a0, a1, a2, a3, a4, a5) {
-  return ASM_CONSTS[code](a0, a1, a2, a3, a4, a5);
-}
 
 
 
-
-// STATICTOP = STATIC_BASE + 161216;
+// STATICTOP = STATIC_BASE + 151904;
 /* global initializers */  __ATINIT__.push({ func: function() { globalCtors() } });
 
 
@@ -1782,7 +1817,7 @@ function _emscripten_asm_const_iiiiiii(code, a0, a1, a2, a3, a4, a5) {
 
 
 /* no memory initializer */
-var tempDoublePtr = 162224
+var tempDoublePtr = 152912
 assert(tempDoublePtr % 8 == 0);
 
 function copyTempFloat(ptr) { // functions, because inlining this code increases code size too much
@@ -1823,6 +1858,8 @@ function copyTempDouble(ptr) {
         ENV['PWD'] = '/';
         ENV['HOME'] = '/home/web_user';
         ENV['LANG'] = 'C.UTF-8';
+        // Browser language detection #8751
+        ENV['LANG'] = ((typeof navigator === 'object' && navigator.languages && navigator.languages[0]) || 'C').replace('-', '_') + '.UTF-8';
         ENV['_'] = Module['thisProgram'];
         // Allocate memory.
         poolPtr = getMemory(TOTAL_ENV_SIZE);
@@ -1864,141 +1901,100 @@ function copyTempDouble(ptr) {
     }
 
   
+  var ___exception_infos={};
   
-  function ___cxa_free_exception(ptr) {
-      try {
-        return _free(ptr);
-      } catch(e) { // XXX FIXME
-        err('exception during cxa_free_exception: ' + e);
+  var ___exception_caught= [];
+  
+  function ___exception_addRef(ptr) {
+      if (!ptr) return;
+      var info = ___exception_infos[ptr];
+      info.refcount++;
+    }
+  
+  function ___exception_deAdjust(adjusted) {
+      if (!adjusted || ___exception_infos[adjusted]) return adjusted;
+      for (var key in ___exception_infos) {
+        var ptr = +key; // the iteration key is a string, and if we throw this, it must be an integer as that is what we look for
+        var adj = ___exception_infos[ptr].adjusted;
+        var len = adj.length;
+        for (var i = 0; i < len; i++) {
+          if (adj[i] === adjusted) {
+            return ptr;
+          }
+        }
       }
-    }var EXCEPTIONS={last:0,caught:[],infos:{},deAdjust:function (adjusted) {
-        if (!adjusted || EXCEPTIONS.infos[adjusted]) return adjusted;
-        for (var key in EXCEPTIONS.infos) {
-          var ptr = +key; // the iteration key is a string, and if we throw this, it must be an integer as that is what we look for
-          var adj = EXCEPTIONS.infos[ptr].adjusted;
-          var len = adj.length;
-          for (var i = 0; i < len; i++) {
-            if (adj[i] === adjusted) {
-              return ptr;
-            }
-          }
-        }
-        return adjusted;
-      },addRef:function (ptr) {
-        if (!ptr) return;
-        var info = EXCEPTIONS.infos[ptr];
-        info.refcount++;
-      },decRef:function (ptr) {
-        if (!ptr) return;
-        var info = EXCEPTIONS.infos[ptr];
-        assert(info.refcount > 0);
-        info.refcount--;
-        // A rethrown exception can reach refcount 0; it must not be discarded
-        // Its next handler will clear the rethrown flag and addRef it, prior to
-        // final decRef and destruction here
-        if (info.refcount === 0 && !info.rethrown) {
-          if (info.destructor) {
-            Module['dynCall_vi'](info.destructor, ptr);
-          }
-          delete EXCEPTIONS.infos[ptr];
-          ___cxa_free_exception(ptr);
-        }
-      },clearRef:function (ptr) {
-        if (!ptr) return;
-        var info = EXCEPTIONS.infos[ptr];
-        info.refcount = 0;
-      }};function ___cxa_begin_catch(ptr) {
-      var info = EXCEPTIONS.infos[ptr];
+      return adjusted;
+    }function ___cxa_begin_catch(ptr) {
+      var info = ___exception_infos[ptr];
       if (info && !info.caught) {
         info.caught = true;
-        __ZSt18uncaught_exceptionv.uncaught_exception--;
+        __ZSt18uncaught_exceptionv.uncaught_exceptions--;
       }
       if (info) info.rethrown = false;
-      EXCEPTIONS.caught.push(ptr);
-      EXCEPTIONS.addRef(EXCEPTIONS.deAdjust(ptr));
+      ___exception_caught.push(ptr);
+      ___exception_addRef(___exception_deAdjust(ptr));
       return ptr;
     }
 
   function ___cxa_current_primary_exception() {
-      var ret = EXCEPTIONS.caught[EXCEPTIONS.caught.length-1] || 0;
-      if (ret) EXCEPTIONS.addRef(EXCEPTIONS.deAdjust(ret));
+      var ret = ___exception_caught[___exception_caught.length-1] || 0;
+      if (ret) ___exception_addRef(___exception_deAdjust(ret));
       return ret;
     }
 
-  function ___cxa_decrement_exception_refcount(ptr) {
-      EXCEPTIONS.decRef(EXCEPTIONS.deAdjust(ptr));
+  
+  
+  function ___cxa_free_exception(ptr) {
+      try {
+        return _free(ptr);
+      } catch(e) {
+        err('exception during cxa_free_exception: ' + e);
+      }
+    }function ___exception_decRef(ptr) {
+      if (!ptr) return;
+      var info = ___exception_infos[ptr];
+      assert(info.refcount > 0);
+      info.refcount--;
+      // A rethrown exception can reach refcount 0; it must not be discarded
+      // Its next handler will clear the rethrown flag and addRef it, prior to
+      // final decRef and destruction here
+      if (info.refcount === 0 && !info.rethrown) {
+        if (info.destructor) {
+          Module['dynCall_vi'](info.destructor, ptr);
+        }
+        delete ___exception_infos[ptr];
+        ___cxa_free_exception(ptr);
+      }
+    }function ___cxa_decrement_exception_refcount(ptr) {
+      ___exception_decRef(___exception_deAdjust(ptr));
     }
 
+  
+  var ___exception_last=0;
   
    function ___cxa_end_catch() {
       // Clear state flag.
       _setThrew(0);
       // Call destructor if one is registered then clear it.
-      var ptr = EXCEPTIONS.caught.pop();
+      var ptr = ___exception_caught.pop();
       if (ptr) {
-        EXCEPTIONS.decRef(EXCEPTIONS.deAdjust(ptr));
-        EXCEPTIONS.last = 0; // XXX in decRef?
+        ___exception_decRef(___exception_deAdjust(ptr));
+        ___exception_last = 0; // XXX in decRef?
       }
-    }
-
-  function ___cxa_find_matching_catch_2() {
-          return ___cxa_find_matching_catch.apply(null, arguments);
-        }
-
-  function ___cxa_find_matching_catch_3() {
-          return ___cxa_find_matching_catch.apply(null, arguments);
-        }
-
-  function ___cxa_find_matching_catch_4() {
-          return ___cxa_find_matching_catch.apply(null, arguments);
-        }
-
-  function ___cxa_find_matching_catch_5() {
-          return ___cxa_find_matching_catch.apply(null, arguments);
-        }
-
-
-  function ___cxa_increment_exception_refcount(ptr) {
-      EXCEPTIONS.addRef(EXCEPTIONS.deAdjust(ptr));
-    }
-
-  function ___cxa_pure_virtual() {
-      ABORT = true;
-      throw 'Pure virtual function called!';
-    }
-
-  function ___cxa_rethrow() {
-      var ptr = EXCEPTIONS.caught.pop();
-      ptr = EXCEPTIONS.deAdjust(ptr);
-      if (!EXCEPTIONS.infos[ptr].rethrown) {
-        // Only pop if the corresponding push was through rethrow_primary_exception
-        EXCEPTIONS.caught.push(ptr)
-        EXCEPTIONS.infos[ptr].rethrown = true;
-      }
-      EXCEPTIONS.last = ptr;
-      throw ptr;
-    }
-
-  function ___cxa_rethrow_primary_exception(ptr) {
-      if (!ptr) return;
-      ptr = EXCEPTIONS.deAdjust(ptr);
-      EXCEPTIONS.caught.push(ptr);
-      EXCEPTIONS.infos[ptr].rethrown = true;
-      ___cxa_rethrow();
     }
 
   
   
   function ___resumeException(ptr) {
-      if (!EXCEPTIONS.last) { EXCEPTIONS.last = ptr; }
+      if (!___exception_last) { ___exception_last = ptr; }
       throw ptr;
     }function ___cxa_find_matching_catch() {
-      var thrown = EXCEPTIONS.last;
+      var thrown = ___exception_last;
       if (!thrown) {
         // just pass through the null ptr
         return ((setTempRet0(0),0)|0);
       }
-      var info = EXCEPTIONS.infos[thrown];
+      var info = ___exception_infos[thrown];
       var throwntype = info.type;
       if (!throwntype) {
         // just pass through the thrown ptr
@@ -2006,17 +2002,17 @@ function copyTempDouble(ptr) {
       }
       var typeArray = Array.prototype.slice.call(arguments);
   
-      var pointer = Module['___cxa_is_pointer_type'](throwntype);
+      var pointer = ___cxa_is_pointer_type(throwntype);
       // can_catch receives a **, add indirection
-      if (!___cxa_find_matching_catch.buffer) ___cxa_find_matching_catch.buffer = _malloc(4);
-      HEAP32[((___cxa_find_matching_catch.buffer)>>2)]=thrown;
-      thrown = ___cxa_find_matching_catch.buffer;
+      var buffer = 152864;
+      HEAP32[((buffer)>>2)]=thrown;
+      thrown = buffer;
       // The different catch blocks are denoted by different types.
       // Due to inheritance, those types may not precisely match the
       // type of the thrown object. Find one which matches, and
       // return the type of the catch block which should be called.
       for (var i = 0; i < typeArray.length; i++) {
-        if (typeArray[i] && Module['___cxa_can_catch'](typeArray[i], throwntype, thrown)) {
+        if (typeArray[i] && ___cxa_can_catch(typeArray[i], throwntype, thrown)) {
           thrown = HEAP32[((thrown)>>2)]; // undo indirection
           info.adjusted.push(thrown);
           return ((setTempRet0(typeArray[i]),thrown)|0);
@@ -2027,8 +2023,59 @@ function copyTempDouble(ptr) {
       // typeinfo defined. Best-efforts match just in case.
       thrown = HEAP32[((thrown)>>2)]; // undo indirection
       return ((setTempRet0(throwntype),thrown)|0);
-    }function ___cxa_throw(ptr, type, destructor) {
-      EXCEPTIONS.infos[ptr] = {
+    }
+  Module["___cxa_find_matching_catch"] = ___cxa_find_matching_catch;function ___cxa_find_matching_catch_2(a0,a1
+  /*``*/) {
+  return ___cxa_find_matching_catch(a0,a1);
+  }
+
+  function ___cxa_find_matching_catch_3(a0,a1,a2
+  /*``*/) {
+  return ___cxa_find_matching_catch(a0,a1,a2);
+  }
+
+  function ___cxa_find_matching_catch_4(a0,a1,a2,a3
+  /*``*/) {
+  return ___cxa_find_matching_catch(a0,a1,a2,a3);
+  }
+
+  function ___cxa_find_matching_catch_5(a0,a1,a2,a3,a4
+  /*``*/) {
+  return ___cxa_find_matching_catch(a0,a1,a2,a3,a4);
+  }
+
+
+  function ___cxa_increment_exception_refcount(ptr) {
+      ___exception_addRef(___exception_deAdjust(ptr));
+    }
+
+  function ___cxa_pure_virtual() {
+      ABORT = true;
+      throw 'Pure virtual function called!';
+    }
+
+  function ___cxa_rethrow() {
+      var ptr = ___exception_caught.pop();
+      ptr = ___exception_deAdjust(ptr);
+      if (!___exception_infos[ptr].rethrown) {
+        // Only pop if the corresponding push was through rethrow_primary_exception
+        ___exception_caught.push(ptr);
+        ___exception_infos[ptr].rethrown = true;
+      }
+      ___exception_last = ptr;
+      throw ptr;
+    }
+
+  function ___cxa_rethrow_primary_exception(ptr) {
+      if (!ptr) return;
+      ptr = ___exception_deAdjust(ptr);
+      ___exception_caught.push(ptr);
+      ___exception_infos[ptr].rethrown = true;
+      ___cxa_rethrow();
+    }
+
+  function ___cxa_throw(ptr, type, destructor) {
+      ___exception_infos[ptr] = {
         ptr: ptr,
         adjusted: [ptr],
         type: type,
@@ -2037,17 +2084,17 @@ function copyTempDouble(ptr) {
         caught: false,
         rethrown: false
       };
-      EXCEPTIONS.last = ptr;
+      ___exception_last = ptr;
       if (!("uncaught_exception" in __ZSt18uncaught_exceptionv)) {
-        __ZSt18uncaught_exceptionv.uncaught_exception = 1;
+        __ZSt18uncaught_exceptionv.uncaught_exceptions = 1;
       } else {
-        __ZSt18uncaught_exceptionv.uncaught_exception++;
+        __ZSt18uncaught_exceptionv.uncaught_exceptions++;
       }
       throw ptr;
     }
 
-  function ___cxa_uncaught_exception() {
-      return !!__ZSt18uncaught_exceptionv.uncaught_exception;
+  function ___cxa_uncaught_exceptions() {
+      return __ZSt18uncaught_exceptionv.uncaught_exceptions;
     }
 
   function ___gxx_personality_v0() {
@@ -2230,16 +2277,17 @@ function copyTempDouble(ptr) {
   }
   }
 
-  function ___syscall91(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // munmap
-      var addr = SYSCALLS.get(), len = SYSCALLS.get();
+  
+  function __emscripten_syscall_munmap(addr, len) {
+      if (addr === -1 || len === 0) {
+        return -22;
+      }
       // TODO: support unmmap'ing parts of allocations
       var info = SYSCALLS.mappings[addr];
       if (!info) return 0;
       if (len === info.len) {
         var stream = FS.getStream(info.fd);
-        SYSCALLS.doMsync(addr, stream, len, info.flags)
+        SYSCALLS.doMsync(addr, stream, len, info.flags);
         FS.munmap(stream);
         SYSCALLS.mappings[addr] = null;
         if (info.allocated) {
@@ -2247,6 +2295,11 @@ function copyTempDouble(ptr) {
         }
       }
       return 0;
+    }function ___syscall91(which, varargs) {SYSCALLS.varargs = varargs;
+  try {
+   // munmap
+      var addr = SYSCALLS.get(), len = SYSCALLS.get();
+      return __emscripten_syscall_munmap(addr, len);
     } catch (e) {
     if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
     return -e.errno;
@@ -3085,6 +3138,11 @@ function copyTempDouble(ptr) {
       });
     }
 
+  function __emscripten_fetch_free(id) {
+    //Note: should just be [id], but indexes off by 1 (see: #8803)
+    delete Fetch.xhrs[id-1];
+  }
+
   
   
   function requireRegisteredType(rawType, humanName) {
@@ -3864,7 +3922,7 @@ function copyTempDouble(ptr) {
         }
       },asyncLoad:function (url, onload, onerror, noRunDep) {
         var dep = !noRunDep ? getUniqueRunDependency('al ' + url) : '';
-        Module['readAsync'](url, function(arrayBuffer) {
+        readAsync(url, function(arrayBuffer) {
           assert(arrayBuffer, 'Loading data file "' + url + '" failed (no arrayBuffer).');
           onload(new Uint8Array(arrayBuffer));
           if (dep) removeRunDependency(dep);
@@ -3969,6 +4027,403 @@ function copyTempDouble(ptr) {
       return HEAP8.length;
     }
 
+  function _emscripten_is_main_browser_thread() {
+      return !ENVIRONMENT_IS_WORKER;
+    }
+
+  
+  var Fetch={xhrs:[],setu64:function (addr, val) {
+      HEAPU32[addr >> 2] = val;
+      HEAPU32[addr + 4 >> 2] = (val / 4294967296)|0;
+    },openDatabase:function (dbname, dbversion, onsuccess, onerror) {
+      try {
+        var openRequest = indexedDB.open(dbname, dbversion);
+      } catch (e) { return onerror(e); }
+  
+      openRequest.onupgradeneeded = function(event) {
+        var db = event.target.result;
+        if (db.objectStoreNames.contains('FILES')) {
+          db.deleteObjectStore('FILES');
+        }
+        db.createObjectStore('FILES');
+      };
+      openRequest.onsuccess = function(event) { onsuccess(event.target.result); };
+      openRequest.onerror = function(error) { onerror(error); };
+    },staticInit:function () {
+      var isMainThread = (typeof ENVIRONMENT_IS_FETCH_WORKER === 'undefined');
+  
+      var onsuccess = function(db) {
+        Fetch.dbInstance = db;
+  
+        if (isMainThread) {
+          removeRunDependency('library_fetch_init');
+        }
+      };
+      var onerror = function() {
+        Fetch.dbInstance = false;
+  
+        if (isMainThread) {
+          removeRunDependency('library_fetch_init');
+        }
+      };
+      Fetch.openDatabase('emscripten_filesystem', 1, onsuccess, onerror);
+  
+      if (typeof ENVIRONMENT_IS_FETCH_WORKER === 'undefined' || !ENVIRONMENT_IS_FETCH_WORKER) addRunDependency('library_fetch_init');
+    }};
+  
+  function __emscripten_fetch_xhr(fetch, onsuccess, onerror, onprogress, onreadystatechange) {
+    var url = HEAPU32[fetch + 8 >> 2];
+    if (!url) {
+      onerror(fetch, 0, 'no url specified!');
+      return;
+    }
+    var url_ = UTF8ToString(url);
+  
+    var fetch_attr = fetch + 112;
+    var requestMethod = UTF8ToString(fetch_attr);
+    if (!requestMethod) requestMethod = 'GET';
+    var userData = HEAPU32[fetch_attr + 32 >> 2];
+    var fetchAttributes = HEAPU32[fetch_attr + 52 >> 2];
+    var timeoutMsecs = HEAPU32[fetch_attr + 56 >> 2];
+    var withCredentials = !!HEAPU32[fetch_attr + 60 >> 2];
+    var destinationPath = HEAPU32[fetch_attr + 64 >> 2];
+    var userName = HEAPU32[fetch_attr + 68 >> 2];
+    var password = HEAPU32[fetch_attr + 72 >> 2];
+    var requestHeaders = HEAPU32[fetch_attr + 76 >> 2];
+    var overriddenMimeType = HEAPU32[fetch_attr + 80 >> 2];
+    var dataPtr = HEAPU32[fetch_attr + 84 >> 2];
+    var dataLength = HEAPU32[fetch_attr + 88 >> 2];
+  
+    var fetchAttrLoadToMemory = !!(fetchAttributes & 1);
+    var fetchAttrStreamData = !!(fetchAttributes & 2);
+    var fetchAttrPersistFile = !!(fetchAttributes & 4);
+    var fetchAttrAppend = !!(fetchAttributes & 8);
+    var fetchAttrReplace = !!(fetchAttributes & 16);
+    var fetchAttrSynchronous = !!(fetchAttributes & 64);
+    var fetchAttrWaitable = !!(fetchAttributes & 128);
+  
+    var userNameStr = userName ? UTF8ToString(userName) : undefined;
+    var passwordStr = password ? UTF8ToString(password) : undefined;
+    var overriddenMimeTypeStr = overriddenMimeType ? UTF8ToString(overriddenMimeType) : undefined;
+  
+    var xhr = new XMLHttpRequest();
+    xhr.withCredentials = withCredentials;
+    xhr.open(requestMethod, url_, !fetchAttrSynchronous, userNameStr, passwordStr);
+    if (!fetchAttrSynchronous) xhr.timeout = timeoutMsecs; // XHR timeout field is only accessible in async XHRs, and must be set after .open() but before .send().
+    xhr.url_ = url_; // Save the url for debugging purposes (and for comparing to the responseURL that server side advertised)
+    assert(!fetchAttrStreamData, 'streaming uses moz-chunked-arraybuffer which is no longer supported; TODO: rewrite using fetch()');
+    xhr.responseType = 'arraybuffer';
+  
+    if (overriddenMimeType) {
+      xhr.overrideMimeType(overriddenMimeTypeStr);
+    }
+    if (requestHeaders) {
+      for(;;) {
+        var key = HEAPU32[requestHeaders >> 2];
+        if (!key) break;
+        var value = HEAPU32[requestHeaders + 4 >> 2];
+        if (!value) break;
+        requestHeaders += 8;
+        var keyStr = UTF8ToString(key);
+        var valueStr = UTF8ToString(value);
+        xhr.setRequestHeader(keyStr, valueStr);
+      }
+    }
+    Fetch.xhrs.push(xhr);
+    var id = Fetch.xhrs.length;
+    HEAPU32[fetch + 0 >> 2] = id;
+    var data = (dataPtr && dataLength) ? HEAPU8.slice(dataPtr, dataPtr + dataLength) : null;
+    // TODO: Support specifying custom headers to the request.
+  
+    xhr.onload = function(e) {
+      var len = xhr.response ? xhr.response.byteLength : 0;
+      var ptr = 0;
+      var ptrLen = 0;
+      if (fetchAttrLoadToMemory && !fetchAttrStreamData) {
+        ptrLen = len;
+        // The data pointer malloc()ed here has the same lifetime as the emscripten_fetch_t structure itself has, and is
+        // freed when emscripten_fetch_close() is called.
+        ptr = _malloc(ptrLen);
+        HEAPU8.set(new Uint8Array(xhr.response), ptr);
+      }
+      HEAPU32[fetch + 12 >> 2] = ptr;
+      Fetch.setu64(fetch + 16, ptrLen);
+      Fetch.setu64(fetch + 24, 0);
+      if (len) {
+        // If the final XHR.onload handler receives the bytedata to compute total length, report that,
+        // otherwise don't write anything out here, which will retain the latest byte size reported in
+        // the most recent XHR.onprogress handler.
+        Fetch.setu64(fetch + 32, len);
+      }
+      HEAPU16[fetch + 40 >> 1] = xhr.readyState;
+      if (xhr.readyState === 4 && xhr.status === 0) {
+        if (len > 0) xhr.status = 200; // If loading files from a source that does not give HTTP status code, assume success if we got data bytes.
+        else xhr.status = 404; // Conversely, no data bytes is 404.
+      }
+      HEAPU16[fetch + 42 >> 1] = xhr.status;
+      if (xhr.statusText) stringToUTF8(xhr.statusText, fetch + 44, 64);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (onsuccess) onsuccess(fetch, xhr, e);
+      } else {
+        if (onerror) onerror(fetch, xhr, e);
+      }
+    };
+    xhr.onerror = function(e) {
+      var status = xhr.status; // XXX TODO: Overwriting xhr.status doesn't work here, so don't override anywhere else either.
+      if (xhr.readyState === 4 && status === 0) status = 404; // If no error recorded, pretend it was 404 Not Found.
+      HEAPU32[fetch + 12 >> 2] = 0;
+      Fetch.setu64(fetch + 16, 0);
+      Fetch.setu64(fetch + 24, 0);
+      Fetch.setu64(fetch + 32, 0);
+      HEAPU16[fetch + 40 >> 1] = xhr.readyState;
+      HEAPU16[fetch + 42 >> 1] = status;
+      if (onerror) onerror(fetch, xhr, e);
+    };
+    xhr.ontimeout = function(e) {
+      if (onerror) onerror(fetch, xhr, e);
+    };
+    xhr.onprogress = function(e) {
+      var ptrLen = (fetchAttrLoadToMemory && fetchAttrStreamData && xhr.response) ? xhr.response.byteLength : 0;
+      var ptr = 0;
+      if (fetchAttrLoadToMemory && fetchAttrStreamData) {
+        // The data pointer malloc()ed here has the same lifetime as the emscripten_fetch_t structure itself has, and is
+        // freed when emscripten_fetch_close() is called.
+        ptr = _malloc(ptrLen);
+        HEAPU8.set(new Uint8Array(xhr.response), ptr);
+      }
+      HEAPU32[fetch + 12 >> 2] = ptr;
+      Fetch.setu64(fetch + 16, ptrLen);
+      Fetch.setu64(fetch + 24, e.loaded - ptrLen);
+      Fetch.setu64(fetch + 32, e.total);
+      HEAPU16[fetch + 40 >> 1] = xhr.readyState;
+      if (xhr.readyState >= 3 && xhr.status === 0 && e.loaded > 0) xhr.status = 200; // If loading files from a source that does not give HTTP status code, assume success if we get data bytes
+      HEAPU16[fetch + 42 >> 1] = xhr.status;
+      if (xhr.statusText) stringToUTF8(xhr.statusText, fetch + 44, 64);
+      if (onprogress) onprogress(fetch, xhr, e);
+    };
+    xhr.onreadystatechange = function(e) {
+      HEAPU16[fetch + 40 >> 1] = xhr.readyState;
+      if (xhr.readyState >= 2) {
+        HEAPU16[fetch + 42 >> 1] = xhr.status;
+      }
+      if (onreadystatechange) onreadystatechange(fetch, xhr, e);
+    };
+    try {
+      xhr.send(data);
+    } catch(e) {
+      if (onerror) onerror(fetch, xhr, e);
+    }
+  }
+  
+  function __emscripten_fetch_cache_data(db, fetch, data, onsuccess, onerror) {
+    if (!db) {
+      onerror(fetch, 0, 'IndexedDB not available!');
+      return;
+    }
+  
+    var fetch_attr = fetch + 112;
+    var destinationPath = HEAPU32[fetch_attr + 64 >> 2];
+    if (!destinationPath) destinationPath = HEAPU32[fetch + 8 >> 2];
+    var destinationPathStr = UTF8ToString(destinationPath);
+  
+    try {
+      var transaction = db.transaction(['FILES'], 'readwrite');
+      var packages = transaction.objectStore('FILES');
+      var putRequest = packages.put(data, destinationPathStr);
+      putRequest.onsuccess = function(event) {
+        HEAPU16[fetch + 40 >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
+        HEAPU16[fetch + 42 >> 1] = 200; // Mimic XHR HTTP status code 200 "OK"
+        stringToUTF8("OK", fetch + 44, 64);
+        onsuccess(fetch, 0, destinationPathStr);
+      };
+      putRequest.onerror = function(error) {
+        // Most likely we got an error if IndexedDB is unwilling to store any more data for this page.
+        // TODO: Can we identify and break down different IndexedDB-provided errors and convert those
+        // to more HTTP status codes for more information?
+        HEAPU16[fetch + 40 >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
+        HEAPU16[fetch + 42 >> 1] = 413; // Mimic XHR HTTP status code 413 "Payload Too Large"
+        stringToUTF8("Payload Too Large", fetch + 44, 64);
+        onerror(fetch, 0, error);
+      };
+    } catch(e) {
+      onerror(fetch, 0, e);
+    }
+  }
+  
+  function __emscripten_fetch_load_cached_data(db, fetch, onsuccess, onerror) {
+    if (!db) {
+      onerror(fetch, 0, 'IndexedDB not available!');
+      return;
+    }
+  
+    var fetch_attr = fetch + 112;
+    var path = HEAPU32[fetch_attr + 64 >> 2];
+    if (!path) path = HEAPU32[fetch + 8 >> 2];
+    var pathStr = UTF8ToString(path);
+  
+    try {
+      var transaction = db.transaction(['FILES'], 'readonly');
+      var packages = transaction.objectStore('FILES');
+      var getRequest = packages.get(pathStr);
+      getRequest.onsuccess = function(event) {
+        if (event.target.result) {
+          var value = event.target.result;
+          var len = value.byteLength || value.length;
+          // The data pointer malloc()ed here has the same lifetime as the emscripten_fetch_t structure itself has, and is
+          // freed when emscripten_fetch_close() is called.
+          var ptr = _malloc(len);
+          HEAPU8.set(new Uint8Array(value), ptr);
+          HEAPU32[fetch + 12 >> 2] = ptr;
+          Fetch.setu64(fetch + 16, len);
+          Fetch.setu64(fetch + 24, 0);
+          Fetch.setu64(fetch + 32, len);
+          HEAPU16[fetch + 40 >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
+          HEAPU16[fetch + 42 >> 1] = 200; // Mimic XHR HTTP status code 200 "OK"
+          stringToUTF8("OK", fetch + 44, 64);
+          onsuccess(fetch, 0, value);
+        } else {
+          // Succeeded to load, but the load came back with the value of undefined, treat that as an error since we never store undefined in db.
+          HEAPU16[fetch + 40 >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
+          HEAPU16[fetch + 42 >> 1] = 404; // Mimic XHR HTTP status code 404 "Not Found"
+          stringToUTF8("Not Found", fetch + 44, 64);
+          onerror(fetch, 0, 'no data');
+        }
+      };
+      getRequest.onerror = function(error) {
+        HEAPU16[fetch + 40 >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
+        HEAPU16[fetch + 42 >> 1] = 404; // Mimic XHR HTTP status code 404 "Not Found"
+        stringToUTF8("Not Found", fetch + 44, 64);
+        onerror(fetch, 0, error);
+      };
+    } catch(e) {
+      onerror(fetch, 0, e);
+    }
+  }
+  
+  function __emscripten_fetch_delete_cached_data(db, fetch, onsuccess, onerror) {
+    if (!db) {
+      onerror(fetch, 0, 'IndexedDB not available!');
+      return;
+    }
+  
+    var fetch_attr = fetch + 112;
+    var path = HEAPU32[fetch_attr + 64 >> 2];
+    if (!path) path = HEAPU32[fetch + 8 >> 2];
+    var pathStr = UTF8ToString(path);
+  
+    try {
+      var transaction = db.transaction(['FILES'], 'readwrite');
+      var packages = transaction.objectStore('FILES');
+      var request = packages.delete(pathStr);
+      request.onsuccess = function(event) {
+        var value = event.target.result;
+        HEAPU32[fetch + 12 >> 2] = 0;
+        Fetch.setu64(fetch + 16, 0);
+        Fetch.setu64(fetch + 24, 0);
+        Fetch.setu64(fetch + 32, 0);
+        HEAPU16[fetch + 40 >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
+        HEAPU16[fetch + 42 >> 1] = 200; // Mimic XHR HTTP status code 200 "OK"
+        stringToUTF8("OK", fetch + 44, 64);
+        onsuccess(fetch, 0, value);
+      };
+      request.onerror = function(error) {
+        HEAPU16[fetch + 40 >> 1] = 4; // Mimic XHR readyState 4 === 'DONE: The operation is complete'
+        HEAPU16[fetch + 42 >> 1] = 404; // Mimic XHR HTTP status code 404 "Not Found"
+        stringToUTF8("Not Found", fetch + 44, 64);
+        onerror(fetch, 0, error);
+      };
+    } catch(e) {
+      onerror(fetch, 0, e);
+    }
+  }
+  
+  
+  var _fetch_work_queue=152880;function __emscripten_get_fetch_work_queue() {
+      return _fetch_work_queue;
+    }
+  
+  function _emscripten_is_main_runtime_thread() {
+  err('missing function: emscripten_is_main_runtime_thread'); abort(-1);
+  }function _emscripten_start_fetch(fetch, successcb, errorcb, progresscb, readystatechangecb) {
+    if (typeof Module !== 'undefined') Module['noExitRuntime'] = true; // If we are the main Emscripten runtime, we should not be closing down.
+  
+    var fetch_attr = fetch + 112;
+    var requestMethod = UTF8ToString(fetch_attr);
+    var onsuccess = HEAPU32[fetch_attr + 36 >> 2];
+    var onerror = HEAPU32[fetch_attr + 40 >> 2];
+    var onprogress = HEAPU32[fetch_attr + 44 >> 2];
+    var onreadystatechange = HEAPU32[fetch_attr + 48 >> 2];
+    var fetchAttributes = HEAPU32[fetch_attr + 52 >> 2];
+    var fetchAttrLoadToMemory = !!(fetchAttributes & 1);
+    var fetchAttrStreamData = !!(fetchAttributes & 2);
+    var fetchAttrPersistFile = !!(fetchAttributes & 4);
+    var fetchAttrNoDownload = !!(fetchAttributes & 32);
+    var fetchAttrAppend = !!(fetchAttributes & 8);
+    var fetchAttrReplace = !!(fetchAttributes & 16);
+  
+    var reportSuccess = function(fetch, xhr, e) {
+      if (onsuccess) dynCall_vi(onsuccess, fetch);
+      else if (successcb) successcb(fetch);
+    };
+  
+    var reportProgress = function(fetch, xhr, e) {
+      if (onprogress) dynCall_vi(onprogress, fetch);
+      else if (progresscb) progresscb(fetch);
+    };
+  
+    var reportError = function(fetch, xhr, e) {
+      if (onerror) dynCall_vi(onerror, fetch);
+      else if (errorcb) errorcb(fetch);
+    };
+  
+    var reportReadyStateChange = function(fetch, xhr, e) {
+      if (onreadystatechange) dynCall_vi(onreadystatechange, fetch);
+      else if (readystatechangecb) readystatechangecb(fetch);
+    };
+  
+    var performUncachedXhr = function(fetch, xhr, e) {
+      __emscripten_fetch_xhr(fetch, reportSuccess, reportError, reportProgress, reportReadyStateChange);
+    };
+  
+    var cacheResultAndReportSuccess = function(fetch, xhr, e) {
+      var storeSuccess = function(fetch, xhr, e) {
+        if (onsuccess) dynCall_vi(onsuccess, fetch);
+        else if (successcb) successcb(fetch);
+      };
+      var storeError = function(fetch, xhr, e) {
+        if (onsuccess) dynCall_vi(onsuccess, fetch);
+        else if (successcb) successcb(fetch);
+      };
+      __emscripten_fetch_cache_data(Fetch.dbInstance, fetch, xhr.response, storeSuccess, storeError);
+    };
+  
+    var performCachedXhr = function(fetch, xhr, e) {
+      __emscripten_fetch_xhr(fetch, cacheResultAndReportSuccess, reportError, reportProgress, reportReadyStateChange);
+    };
+  
+    // Should we try IndexedDB first?
+    var needsIndexedDbConnection = !fetchAttrReplace || requestMethod === 'EM_IDB_STORE' || requestMethod === 'EM_IDB_DELETE';
+    if (needsIndexedDbConnection && !Fetch.dbInstance) {
+      reportError(fetch, 0, 'IndexedDB is not open');
+      return 0; // todo: free
+    }
+  
+    if (requestMethod === 'EM_IDB_STORE') {
+      // TODO(?): Here we perform a clone of the data, because storing shared typed arrays to IndexedDB does not seem to be allowed.
+      var ptr = HEAPU32[fetch_attr + 84 >> 2];
+      __emscripten_fetch_cache_data(Fetch.dbInstance, fetch, HEAPU8.slice(ptr, ptr + HEAPU32[fetch_attr + 88 >> 2]), reportSuccess, reportError);
+    } else if (requestMethod === 'EM_IDB_DELETE') {
+      __emscripten_fetch_delete_cached_data(Fetch.dbInstance, fetch, reportSuccess, reportError);
+    } else if (!fetchAttrReplace) {
+      __emscripten_fetch_load_cached_data(Fetch.dbInstance, fetch, reportSuccess, fetchAttrNoDownload ? reportError : (fetchAttrPersistFile ? performCachedXhr : performUncachedXhr));
+    } else if (!fetchAttrNoDownload) {
+      __emscripten_fetch_xhr(fetch, fetchAttrPersistFile ? cacheResultAndReportSuccess : reportSuccess, reportError, reportProgress, reportReadyStateChange);
+    } else {
+      return 0; // todo: free
+    }
+    return fetch;
+  }
+
   function _exit(status) {
       // void _exit(int status);
       // http://pubs.opengroup.org/onlinepubs/000095399/functions/exit.html
@@ -4021,10 +4476,10 @@ function copyTempDouble(ptr) {
     }
 
   
-  var ___tm_current=162064;
+  var ___tm_current=152720;
   
   
-  var ___tm_timezone=(stringToUTF8("GMT", 162112, 4), 162112);
+  var ___tm_timezone=(stringToUTF8("GMT", 152768, 4), 152768);
   
   function _tzset() {
       // TODO: Use (malleable) environment variables instead of system settings.
@@ -4156,11 +4611,13 @@ function copyTempDouble(ptr) {
         } else {
           // ..., but after that, add smaller increments towards 2GB, which we cannot reach
           newSize = Math.min(alignUp((3 * newSize + 2147483648) / 4, PAGE_MULTIPLE), LIMIT);
-          if (newSize === oldSize) {
-            warnOnce('Cannot ask for more memory since we reached the practical limit in browsers (which is just below 2GB), so the request would have failed. Requesting only ' + HEAP8.length);
-          }
+        }
+  
+        if (newSize === oldSize) {
+          warnOnce('Cannot ask for more memory since we reached the practical limit in browsers (which is just below 2GB), so the request would have failed. Requesting only ' + HEAP8.length);
         }
       }
+  
   
   
       var start = Date.now();
@@ -4248,7 +4705,27 @@ function copyTempDouble(ptr) {
         '%R': '%H:%M',                    // Replaced by the time in 24-hour notation
         '%T': '%H:%M:%S',                 // Replaced by the time
         '%x': '%m/%d/%y',                 // Replaced by the locale's appropriate date representation
-        '%X': '%H:%M:%S'                  // Replaced by the locale's appropriate date representation
+        '%X': '%H:%M:%S',                 // Replaced by the locale's appropriate time representation
+        // Modified Conversion Specifiers
+        '%Ec': '%c',                      // Replaced by the locale's alternative appropriate date and time representation.
+        '%EC': '%C',                      // Replaced by the name of the base year (period) in the locale's alternative representation.
+        '%Ex': '%m/%d/%y',                // Replaced by the locale's alternative date representation.
+        '%EX': '%H:%M:%S',                // Replaced by the locale's alternative time representation.
+        '%Ey': '%y',                      // Replaced by the offset from %EC (year only) in the locale's alternative representation.
+        '%EY': '%Y',                      // Replaced by the full alternative year representation.
+        '%Od': '%d',                      // Replaced by the day of the month, using the locale's alternative numeric symbols, filled as needed with leading zeros if there is any alternative symbol for zero; otherwise, with leading <space> characters.
+        '%Oe': '%e',                      // Replaced by the day of the month, using the locale's alternative numeric symbols, filled as needed with leading <space> characters.
+        '%OH': '%H',                      // Replaced by the hour (24-hour clock) using the locale's alternative numeric symbols.
+        '%OI': '%I',                      // Replaced by the hour (12-hour clock) using the locale's alternative numeric symbols.
+        '%Om': '%m',                      // Replaced by the month using the locale's alternative numeric symbols.
+        '%OM': '%M',                      // Replaced by the minutes using the locale's alternative numeric symbols.
+        '%OS': '%S',                      // Replaced by the seconds using the locale's alternative numeric symbols.
+        '%Ou': '%u',                      // Replaced by the weekday as a number in the locale's alternative representation (Monday=1).
+        '%OU': '%U',                      // Replaced by the week number of the year (Sunday as the first day of the week, rules corresponding to %U ) using the locale's alternative numeric symbols.
+        '%OV': '%V',                      // Replaced by the week number of the year (Monday as the first day of the week, rules corresponding to %V ) using the locale's alternative numeric symbols.
+        '%Ow': '%w',                      // Replaced by the number of the weekday (Sunday=0) using the locale's alternative numeric symbols.
+        '%OW': '%W',                      // Replaced by the week number of the year (Monday as the first day of the week) using the locale's alternative numeric symbols.
+        '%Oy': '%y',                      // Replaced by the year (offset from %C ) using the locale's alternative numeric symbols.
       };
       for (var rule in EXPANSION_RULES_1) {
         pattern = pattern.replace(new RegExp(rule, 'g'), EXPANSION_RULES_1[rule]);
@@ -4263,16 +4740,16 @@ function copyTempDouble(ptr) {
           str = character[0]+str;
         }
         return str;
-      };
+      }
   
       function leadingNulls(value, digits) {
         return leadingSomething(value, digits, '0');
-      };
+      }
   
       function compareByDay(date1, date2) {
         function sgn(value) {
           return value < 0 ? -1 : (value > 0 ? 1 : 0);
-        };
+        }
   
         var compare;
         if ((compare = sgn(date1.getFullYear()-date2.getFullYear())) === 0) {
@@ -4281,7 +4758,7 @@ function copyTempDouble(ptr) {
           }
         }
         return compare;
-      };
+      }
   
       function getFirstWeekStartDate(janFourth) {
           switch (janFourth.getDay()) {
@@ -4300,7 +4777,7 @@ function copyTempDouble(ptr) {
             case 6: // Saturday
               return new Date(janFourth.getFullYear()-1, 11, 30);
           }
-      };
+      }
   
       function getWeekBasedYear(date) {
           var thisDate = __addDays(new Date(date.tm_year+1900, 0, 1), date.tm_yday);
@@ -4321,7 +4798,7 @@ function copyTempDouble(ptr) {
           } else {
             return thisDate.getFullYear()-1;
           }
-      };
+      }
   
       var EXPANSION_RULES_2 = {
         '%a': function(date) {
@@ -4398,8 +4875,7 @@ function copyTempDouble(ptr) {
           return '\t';
         },
         '%u': function(date) {
-          var day = new Date(date.tm_year+1900, date.tm_mon+1, date.tm_mday, 0, 0, 0, 0);
-          return day.getDay() || 7;
+          return date.tm_wday || 7;
         },
         '%U': function(date) {
           // Replaced by the week number of the year as a decimal number [00,53].
@@ -4456,8 +4932,7 @@ function copyTempDouble(ptr) {
           return leadingNulls(Math.ceil(daysDifference/7), 2);
         },
         '%w': function(date) {
-          var day = new Date(date.tm_year+1900, date.tm_mon+1, date.tm_mday, 0, 0, 0, 0);
-          return day.getDay();
+          return date.tm_wday;
         },
         '%W': function(date) {
           // Replaced by the week number of the year as a decimal number [00,53].
@@ -4552,6 +5027,7 @@ Module["requestFullScreen"] = function Module_requestFullScreen(lockPointer, res
   Module["resumeMainLoop"] = function Module_resumeMainLoop() { Browser.mainLoop.resume() };
   Module["getUserMedia"] = function Module_getUserMedia() { Browser.getUserMedia() }
   Module["createContext"] = function Module_createContext(canvas, useWebGL, setInModule, webGLContextAttributes) { return Browser.createContext(canvas, useWebGL, setInModule, webGLContextAttributes) };
+Fetch.staticInit();;
 var ASSERTIONS = true;
 
 // Copyright 2017 The Emscripten Authors.  All rights reserved.
@@ -5221,7 +5697,7 @@ function invoke_vjji(index,a1,a2,a3,a4,a5) {
   }
 }
 
-var asmGlobalArg = {}
+var asmGlobalArg = {};
 
 var asmLibraryArg = {
   "abort": abort,
@@ -5346,7 +5822,10 @@ var asmLibraryArg = {
   "___cxa_rethrow": ___cxa_rethrow,
   "___cxa_rethrow_primary_exception": ___cxa_rethrow_primary_exception,
   "___cxa_throw": ___cxa_throw,
-  "___cxa_uncaught_exception": ___cxa_uncaught_exception,
+  "___cxa_uncaught_exceptions": ___cxa_uncaught_exceptions,
+  "___exception_addRef": ___exception_addRef,
+  "___exception_deAdjust": ___exception_deAdjust,
+  "___exception_decRef": ___exception_decRef,
   "___gxx_personality_v0": ___gxx_personality_v0,
   "___lock": ___lock,
   "___map_file": ___map_file,
@@ -5370,6 +5849,13 @@ var asmLibraryArg = {
   "__embind_register_std_string": __embind_register_std_string,
   "__embind_register_std_wstring": __embind_register_std_wstring,
   "__embind_register_void": __embind_register_void,
+  "__emscripten_fetch_cache_data": __emscripten_fetch_cache_data,
+  "__emscripten_fetch_delete_cached_data": __emscripten_fetch_delete_cached_data,
+  "__emscripten_fetch_free": __emscripten_fetch_free,
+  "__emscripten_fetch_load_cached_data": __emscripten_fetch_load_cached_data,
+  "__emscripten_fetch_xhr": __emscripten_fetch_xhr,
+  "__emscripten_get_fetch_work_queue": __emscripten_get_fetch_work_queue,
+  "__emscripten_syscall_munmap": __emscripten_syscall_munmap,
   "__emval_call": __emval_call,
   "__emval_decref": __emval_decref,
   "__emval_lookupTypes": __emval_lookupTypes,
@@ -5382,15 +5868,17 @@ var asmLibraryArg = {
   "_emscripten_asm_const_ii": _emscripten_asm_const_ii,
   "_emscripten_asm_const_iiii": _emscripten_asm_const_iiii,
   "_emscripten_asm_const_iiiiiii": _emscripten_asm_const_iiiiiii,
-  "_emscripten_asm_const_iiiiiiiiiii": _emscripten_asm_const_iiiiiiiiiii,
   "_emscripten_async_call": _emscripten_async_call,
   "_emscripten_get_heap_size": _emscripten_get_heap_size,
   "_emscripten_get_now": _emscripten_get_now,
   "_emscripten_get_now_is_monotonic": _emscripten_get_now_is_monotonic,
+  "_emscripten_is_main_browser_thread": _emscripten_is_main_browser_thread,
+  "_emscripten_is_main_runtime_thread": _emscripten_is_main_runtime_thread,
   "_emscripten_memcpy_big": _emscripten_memcpy_big,
   "_emscripten_resize_heap": _emscripten_resize_heap,
   "_emscripten_set_main_loop": _emscripten_set_main_loop,
   "_emscripten_set_main_loop_timing": _emscripten_set_main_loop_timing,
+  "_emscripten_start_fetch": _emscripten_start_fetch,
   "_exit": _exit,
   "_getenv": _getenv,
   "_gettimeofday": _gettimeofday,
@@ -5438,7 +5926,7 @@ var asmLibraryArg = {
   "whenDependentTypesAreResolved": whenDependentTypesAreResolved,
   "tempDoublePtr": tempDoublePtr,
   "DYNAMICTOP_PTR": DYNAMICTOP_PTR
-}
+};
 // EMSCRIPTEN_START_ASM
 var asm =Module["asm"]// EMSCRIPTEN_END_ASM
 (asmGlobalArg, asmLibraryArg, buffer);
@@ -5469,6 +5957,13 @@ asm["___cxa_is_pointer_type"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return real____cxa_is_pointer_type.apply(null, arguments);
+};
+
+var real____embind_register_native_and_builtin_types = asm["___embind_register_native_and_builtin_types"];
+asm["___embind_register_native_and_builtin_types"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real____embind_register_native_and_builtin_types.apply(null, arguments);
 };
 
 var real____getTypeName = asm["___getTypeName"];
@@ -5612,6 +6107,12 @@ var ___cxa_is_pointer_type = Module["___cxa_is_pointer_type"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxa_is_pointer_type"].apply(null, arguments)
+};
+
+var ___embind_register_native_and_builtin_types = Module["___embind_register_native_and_builtin_types"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["___embind_register_native_and_builtin_types"].apply(null, arguments)
 };
 
 var ___getTypeName = Module["___getTypeName"] = function() {
@@ -6143,7 +6644,7 @@ function ExitStatus(status) {
   this.name = "ExitStatus";
   this.message = "Program terminated with exit(" + status + ")";
   this.status = status;
-};
+}
 ExitStatus.prototype = new Error();
 ExitStatus.prototype.constructor = ExitStatus;
 
@@ -6153,15 +6654,13 @@ dependenciesFulfilled = function runCaller() {
   // If run has never been called, and we should call run (INVOKE_RUN is true, and Module.noInitialRun is not false)
   if (!Module['calledRun']) run();
   if (!Module['calledRun']) dependenciesFulfilled = runCaller; // try this again later, after new deps are fulfilled
-}
+};
 
 Module['callMain'] = function callMain(args) {
   assert(runDependencies == 0, 'cannot call main when async dependencies remain! (listen on Module["onRuntimeInitialized"])');
   assert(__ATPRERUN__.length == 0, 'cannot call main when preRun functions remain to be called');
 
   args = args || [];
-
-  ensureInitRuntime();
 
   var argc = args.length+1;
   var argv = stackAlloc((argc + 1) * 4);
@@ -6174,7 +6673,7 @@ Module['callMain'] = function callMain(args) {
 
   try {
 
-    var ret = Module['_main'](argc, argv, 0);
+    var ret = Module['_main'](argc, argv);
 
 
     // if we're not running an evented main loop, it's time to exit
@@ -6226,7 +6725,7 @@ function run(args) {
 
     if (ABORT) return;
 
-    ensureInitRuntime();
+    initRuntime();
 
     preMain();
 
@@ -6318,13 +6817,9 @@ function abort(what) {
     Module['onAbort'](what);
   }
 
-  if (what !== undefined) {
-    out(what);
-    err(what);
-    what = JSON.stringify(what)
-  } else {
-    what = '';
-  }
+  what += '';
+  out(what);
+  err(what);
 
   ABORT = true;
   EXITSTATUS = 1;

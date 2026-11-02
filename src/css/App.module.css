@@ -1,40 +1,115 @@
-/*
- * Copyright 2019 The Bytecoin developers.
- * Licensed under the GNU Affero General Public License, version 3.
- */
-
 .app {
   display: flex;
   flex-direction: column;
-  white-space: nowrap;
   min-height: 100vh;
+  color: var(--color-text);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 0 clamp(1rem, 3.5vw, 3.5rem);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--color-text);
+}
+
+.brand img {
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 0.75rem;
+}
+
+.brand div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.brand strong {
+  font-size: 0.94rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.brand span {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.helpToggle,
+.themeToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.55rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--surface-muted);
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+
+.helpToggle {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.helpToggle:hover {
+  border-color: var(--color-primary);
+  background: var(--button-primary-hover);
+  color: #fff;
+}
+
+.themeToggle:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
 }
 
 .footer {
-  padding: 1rem;
-  width: 100%;
-  text-align: center;
-  color: white;
-  font-size: small;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  width: min(76rem, calc(100% - 3rem));
+  margin: auto auto 0;
+  padding: 1.2rem 0 1.5rem;
+  color: var(--color-muted);
+  font-size: 0.73rem;
 }
 
 .footer a {
-  color: white;
-  text-decoration: underline;
+  color: var(--color-primary);
+  text-decoration: none;
 }
 
-.warning {
-  position: sticky;
-  bottom: 0;
-  padding: 0.5rem;
-
-  text-align: center;
-  font-size: small;
-  font-weight: bold;
-  color: white;
-  background-color: var(--color-danger);
-
-  box-shadow: var(--big-shadow);
+.footer a:hover {
+  text-decoration: underline;
 }
 
 :global(.app-main-enter) {
@@ -44,7 +119,7 @@
 
 :global(.app-main-enter-active) {
   opacity: 1;
-  transition: opacity 300ms 0ms ease-out;
+  transition: opacity 240ms ease-out;
 }
 
 :global(.app-main-exit) {
@@ -54,5 +129,27 @@
 
 :global(.app-main-exit-active) {
   opacity: 0;
-  transition: opacity 300ms 0ms ease-out;
+  transition: opacity 180ms ease-in;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    min-height: 4rem;
+  }
+
+  .topbarActions {
+    gap: 0.4rem;
+  }
+
+  .helpToggle,
+  .themeToggle {
+    min-height: 2.35rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .footer {
+    justify-content: center;
+    width: calc(100% - 2rem);
+    text-align: center;
+  }
 }

@@ -4,215 +4,357 @@
  */
 
 .status {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  color: var(--color-text);
+  box-shadow: var(--big-shadow);
+}
+
+.statusHeading {
   display: flex;
-  padding: 1rem;
-}
-
-.statusIcon {
-  margin-top: -1px;
-  margin-right: 0.5rem;
-}
-
-.statusIcon img {
-  width: 1rem;
-  border-radius: 50%;
-  box-shadow: 0 0 5px white;
-}
-
-.syncStatusSummary {
-  flex-grow: 1;
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-  color: white;
+  gap: 1rem;
+}
+
+.statusLabel {
+  margin-bottom: 0.3rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .syncStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
-.syncStatusBlock a {
-  color: white;
-  text-decoration: underline;
+.nodeAddress {
+  margin: 0.3rem 0 0 1.15rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
 }
 
-.syncStatusTimestamp:before {
-  content: "(";
+.statusDot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
 }
 
-.syncStatusTimestamp:after {
-  content: ")";
+.statusDotSynced {
+  background: var(--color-success);
+  box-shadow: 0 0 0 4px var(--color-success-light);
+}
+
+.statusDotError {
+  background: var(--color-danger);
+  box-shadow: 0 0 0 4px var(--color-danger-light);
+}
+
+.statusDotSyncing {
+  background: var(--color-warning);
+  box-shadow: 0 0 0 4px var(--color-warning-light, #fff5d8);
+}
+
+.statusBlock {
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.statusBlock a {
+  color: var(--color-primary);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.statusBlockTime {
+  color: var(--color-muted);
+}
+
+.progressGroup {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.progressLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.progressLabel span:last-child {
+  min-width: 2.4rem;
+  padding: 0.14rem 0.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  text-align: center;
+}
+
+.progress {
+  display: block;
+  width: 100%;
+  height: 0.75rem;
+  padding: 1.5px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--surface-muted), var(--surface));
+  color: var(--color-primary);
+  appearance: none;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.09), 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.progress::-webkit-progress-bar {
+  border-radius: 999px;
+  background: transparent;
+}
+
+.progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), #ef5c9b 55%, #ffc0d9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 8px var(--button-shadow);
+  transition: width 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.progress::-moz-progress-bar {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), #ef5c9b 55%, #ffc0d9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 8px var(--button-shadow);
+  transition: width 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.progressIndeterminate {
+  position: relative;
+}
+
+.progressIndeterminateFill {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0;
+  width: 35%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--color-primary), #ffc0d9, transparent);
+  animation: progressIndeterminate 1.5s ease-in-out infinite;
+}
+
+.progressGroupSyncing .progress::-webkit-progress-value {
+  background-size: 200% 100%;
+  animation: progressShimmer 1.8s linear infinite;
+}
+
+.progressGroupSyncing .progress::-moz-progress-bar {
+  background-size: 200% 100%;
+  animation: progressShimmer 1.8s linear infinite;
+}
+
+.progressGroupComplete .progressLabel span:last-child {
+  border-color: var(--color-success-light);
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.progressGroupComplete .progress::-webkit-progress-value {
+  background: var(--color-success);
+  box-shadow: 0 0 8px var(--color-success-light);
+}
+
+.progressGroupComplete .progress::-moz-progress-bar {
+  background: var(--color-success);
+  box-shadow: 0 0 8px var(--color-success-light);
+}
+
+@keyframes progressShimmer {
+  from {
+    background-position: 0 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes progressIndeterminate {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(310%);
+  }
 }
 
 .syncStatusError {
-  font-weight: bold;
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  white-space: normal;
 }
 
-.ellipsis:after {
-  overflow: hidden;
-  display: inline-block;
-  vertical-align: bottom;
-  animation: ellipsis steps(4,end) 900ms infinite;
-  content: "\2026";
-  width: 0;
+.statusCompact {
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 0.8rem;
+  background: linear-gradient(145deg, var(--surface-muted), var(--surface));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
 }
 
-@keyframes ellipsis {
-  to {
-    width: 1em;
-  }
-}
-
-.controls {
-  z-index: 100;
-  position: sticky;
-  top: 0;
-
-  margin: 0 1rem;
-}
-
-.main {
-  position: relative;
-  z-index: 102;
-
-  padding: 1rem;
-  background-color: white;
-  box-shadow: var(--big-shadow);
-
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.recv button > svg:first-child, .send button > svg:first-child {
-  height: 0.75rem;
-  width: 0.75rem;
-  fill: var(--color-text);
-
-  margin-right: 0.5rem;
-  vertical-align: baseline;
-}
-
-.balance {
-  flex: 1 100%;
-}
-.recv {
-  flex: 1 auto;
-  margin-top: 1rem;
-}
-.send {
-  flex: 1 auto;
-  margin-top: 1rem;
-}
-
-@media (min-width: 576px) {
-  .recv {
-    order: 1;
-    flex: 1 0;
-    margin: 0;
-  }
-  .balance {
-    order: 2;
-    flex: 2 0;
-  }
-  .send {
-    order: 3;
-    flex: 1 0;
-    margin: 0;
-  }
-}
-
-.balance {
-  display: flex;
+.statusCompact .statusHeading {
+  align-items: flex-start;
   flex-direction: column;
-  align-items: center;
-
-  overflow: hidden;
+  gap: 0.65rem;
 }
 
-.settingsButton {
-  margin-left: 0.5rem !important;
-  padding-bottom: 0.25em !important;
-  vertical-align: bottom;
-  font-size: 0.75em !important;
-  font-family: var(--emoji-fonts);
+.statusCompact .statusLabel {
+  margin-bottom: 0.2rem;
+  font-size: 0.65rem;
 }
 
-.balanceAvailable {
-  font-size: x-large;
+.statusCompact .syncStatus {
+  font-size: 0.84rem;
 }
 
-.balancePending {
+.statusCompact .nodeAddress {
+  margin: 0.25rem 0 0;
+  font-size: 0.68rem;
+}
+
+.statusCompact .statusBlock {
+  display: grid;
+  justify-items: start;
+  width: 100%;
+  gap: 0.15rem;
+  padding: 0.6rem 0.65rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  text-align: left;
+}
+
+.statusBlockLabel {
   color: var(--color-muted);
-  font-size: small;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
-.recv {
+.statusCompact .statusBlock a {
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+.statusCompact .statusBlockTime {
+  font-size: 0.66rem;
+}
+
+.statusCompact .progressGroup {
+  gap: 0.4rem;
+}
+
+.statusCompact .progressLabel {
+  font-size: 0.7rem;
+}
+
+.statusCompact .progressLabel span:last-child {
+  min-width: 2.1rem;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.66rem;
+}
+
+.statusCompact .progress {
+  height: 0.68rem;
+}
+
+.statusCompact .syncStatusError {
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.syncErrorPanel {
   display: flex;
-  justify-content: flex-start;
-}
-
-.send {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.recv button:global(.active), .send button:global(.active) {
-  font-weight: bold;
-}
-
-.drawer {
-  position: relative;
-  z-index: 101;
-
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--color-danger);
+  border-radius: 0.95rem;
+  background: linear-gradient(135deg, var(--color-danger-light), var(--surface));
   box-shadow: var(--big-shadow);
-  background-color: var(--color-light);
-
-  padding: 1rem;
 }
 
-:global(.balance-drawer-form-up-enter) {
-  transform: scaleY(0);
-  transform-origin: bottom;
-  will-change: transform;
+.syncErrorIcon {
+  display: grid;
+  flex: 0 0 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
 }
 
-:global(.balance-drawer-form-up-enter-active) {
-  transform: scaleY(1);
-  transition: transform 300ms 0ms ease-out;
+.syncErrorContent {
+  min-width: 0;
 }
 
-:global(.balance-drawer-form-up-exit) {
-  transform: scaleY(1);
-  transform-origin: bottom;
-  will-change: transform;
+.syncErrorContent h2 {
+  margin: 0 0 0.25rem;
+  color: var(--color-danger);
+  font-size: 0.95rem;
 }
 
-:global(.balance-drawer-form-up-exit-active) {
-  transform: scaleY(0);
-  transition: transform 300ms 0ms ease-out;
+.syncErrorContent p {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
-:global(.balance-drawer-form-up-exit-done) {
-  display: none;
-}
+@media (max-width: 575px) {
+  .status {
+    padding: 0.9rem;
+  }
 
-:global(.balance-drawer-form-down-enter) {
-  transform: scaleY(0);
-  transform-origin: top;
-  will-change: transform;
-}
+  @media (prefers-reduced-motion: reduce) {
+    .progressIndeterminateFill {
+      animation: none;
+    }
 
-:global(.balance-drawer-form-down-enter-active) {
-  transform: scaleY(1);
-  transition: transform 300ms 0ms ease-out;
-}
+    .progressGroupSyncing .progress::-webkit-progress-value {
+      animation: none;
+    }
 
-:global(.balance-drawer-form-down-exit) {
-  transform: scaleY(1);
-  transform-origin: top;
-  will-change: transform;
-}
+    .progressGroupSyncing .progress::-moz-progress-bar {
+      animation: none;
+    }
+  }
 
-:global(.balance-drawer-form-down-exit-active) {
-  transform: scaleY(0);
-  transition: transform 300ms 0ms ease-out;
+  .syncErrorPanel {
+    gap: 0.7rem;
+    padding: 0.85rem;
+  }
 }

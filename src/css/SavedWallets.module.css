@@ -1,0 +1,263 @@
+/*
+ * Copyright 2019 The Bytecoin developers.
+ * Licensed under the GNU Affero General Public License, version 3.
+ */
+
+.savedWallets {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: var(--big-shadow);
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+.heading h2 {
+  margin: 0.25rem 0;
+  color: var(--color-text);
+  font-size: 1.35rem;
+}
+
+.heading p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.count {
+  display: grid;
+  min-width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.walletList {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.walletCard {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.85rem;
+  background: var(--surface-muted);
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.walletCard:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.avatar {
+  width: 3rem;
+  height: 3rem;
+  padding: 0.2rem;
+}
+
+.walletInfo {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.walletHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.walletHeading strong {
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.viewOnlyBadge {
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.walletInfo code {
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--monospace-fonts);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lastOpened {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+.openButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.55rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--button-primary-bg);
+  border-radius: 0.65rem;
+  background: var(--button-primary-bg);
+  color: #fff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 140ms ease;
+}
+
+.openButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.openButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.unlockForm {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 0.55rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.unlockForm label {
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.unlockForm input[type='password'] {
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--color-text);
+}
+
+.unlockForm small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.unlockActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.cancelButton {
+  min-height: 2.55rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.emptyState {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  padding: 2.25rem 1rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 0.85rem;
+  background: var(--surface-muted);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 1rem;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.emptyState h3 {
+  margin: 0.35rem 0 0;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.emptyState p,
+.openStatus {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.openStatus {
+  color: var(--color-danger);
+}
+
+@media (max-width: 575px) {
+  .savedWallets {
+    padding: 1rem;
+  }
+
+  .walletCard {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
+  .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .openButton {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .unlockActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}

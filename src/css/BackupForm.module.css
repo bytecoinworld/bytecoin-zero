@@ -1,0 +1,158 @@
+/*
+ * Copyright 2019 The Bytecoin developers.
+ * Licensed under the GNU Affero General Public License, version 3.
+ */
+
+.backup {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: var(--big-shadow);
+}
+
+.heading h2 {
+  margin: 0 0 0.35rem;
+  color: var(--color-text);
+}
+
+.heading p,
+.backup > p {
+  margin: 0;
+  color: var(--color-muted);
+  white-space: normal;
+}
+
+.warning {
+  padding: 1rem;
+  border: 1px solid var(--color-warning);
+  border-radius: 0.75rem;
+  background: var(--color-warning-light, #fff5d8);
+  color: var(--color-text);
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.phrase {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
+  font-family: var(--monospace-fonts);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.fileNotice {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  white-space: normal;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.actions button,
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--color-text);
+  font-weight: 650;
+}
+
+.primaryButton {
+  justify-self: start;
+  border-color: var(--button-primary-bg);
+  background: var(--button-primary-bg);
+  color: #fff;
+}
+
+.passwordForm {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 32rem;
+}
+
+.passwordForm label {
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.passwordForm input[type='password'] {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--color-text);
+}
+
+.passwordHint,
+.passwordError {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.passwordHint {
+  color: var(--color-muted);
+}
+
+.passwordError {
+  color: var(--color-danger);
+}
+
+.passwordActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.cancelButton {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--color-text);
+  font-weight: 650;
+}
+
+.actions button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+@media (max-width: 575px) {
+  .backup {
+    padding: 1rem;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

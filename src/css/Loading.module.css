@@ -19,7 +19,7 @@
   border: 2px solid;
   border-radius: 50%;
   animation: rotating 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color: #ee4287 transparent transparent transparent;
+  border-color: var(--color-primary) transparent transparent transparent;
 }
 
 .loading div:nth-child(1) {

@@ -10,7 +10,14 @@ export interface IStatus {
   readonly topBlockTime: Date;
   readonly topBlockHash: string;
   readonly topKnownBlockHeight: number;
+  readonly recommendedFeePerByte?: number;
   readonly lowerLevelError: string;
+  readonly connectionError: string;
+}
+
+export function isDaemonVersionIncompatible(status: Pick<IStatus, 'lowerLevelError' | 'connectionError'>): boolean {
+  return /INCOMPATIBLE_DAEMON_VERSION|sync_blocks_v3\.5\.2|sync_mem_pool_v3\.5\.2/i
+    .test(`${status.lowerLevelError} ${status.connectionError}`);
 }
 
 export interface IBalance {
@@ -52,7 +59,14 @@ export interface ITransaction {
   readonly time: Date;
   readonly kind: TxKind;
   readonly hash: string;
+  readonly amount: number;
   readonly fee: number;
+  readonly paymentId?: string;
+  readonly anonymity?: number;
+  readonly unlockBlockOrTimestamp?: number;
+  readonly publicKey: string;
+  readonly coinbase: boolean;
+  readonly extra: string;
   readonly summary: ITransfer[];
   readonly transfers: IGroupedTransfers;
 }
@@ -96,9 +110,40 @@ export interface IExistingWalletInfo {
 }
 
 export const MAX_BLOCK_NUMBER = 500000000;
+const WALLET_ADDRESS_COUNT_STORAGE_PREFIX = 'bytecoin-zero-address-count:';
 
 function isWalletClosedErr(err: Error | null): boolean {
   return err !== null && (err.message.indexOf('#-32600: Wallet closed') !== -1 || err.message.indexOf('#-32600: Wallet must be open') !== -1);
+}
+
+export function getRememberedWalletAddressCount(filename: string): number {
+  if (!filename) {
+    return 0;
+  }
+
+  const storedCount = window.localStorage.getItem(`${WALLET_ADDRESS_COUNT_STORAGE_PREFIX}${filename}`);
+  if (storedCount === null) {
+    return 0;
+  }
+
+  const count = Number(storedCount);
+  if (!Number.isSafeInteger(count) || count < 0) {
+    throw new Error('The saved wallet address count is invalid.');
+  }
+  return count;
+}
+
+export function rememberWalletAddressCount(filename: string, count: number): void {
+  if (!filename) {
+    throw new Error('The wallet file name is unavailable.');
+  }
+  if (!Number.isSafeInteger(count) || count < 0) {
+    throw new Error('The wallet address count is invalid.');
+  }
+
+  const key = `${WALLET_ADDRESS_COUNT_STORAGE_PREFIX}${filename}`;
+  const storedCount = getRememberedWalletAddressCount(filename);
+  window.localStorage.setItem(key, String(Math.max(storedCount, count)));
 }
 
 export async function start(
@@ -106,6 +151,8 @@ export async function start(
   description: string,
   isNew: boolean,
   viewOnly: boolean,
+  nodeAddress: string,
+  walletPassword: string,
   setWallet: (wallet: walletd.Walletd) => void,
   setStatus: (status: IStatus) => void,
   setBalance: (balance: IBalance) => void,
@@ -114,17 +161,91 @@ export async function start(
 ) {
   const timestamp = isNew ? Math.round(Date.now().valueOf() / 1000) : 0;
 
-  const [instance, err] = await util.try_(walletd.Walletd.create(DEFAULT_BYTECOIND_ADDR, isFile, description, timestamp));
+  const [instance, err] = await util.try_(walletd.Walletd.create(
+    nodeAddress, isFile, description, timestamp, walletPassword,
+  ));
   if (instance === undefined) {
     alert(`Failed to open wallet: ${err}`);
     return;
   }
 
   try {
+    const rememberedAddressCount = getRememberedWalletAddressCount(instance.getFilename());
+    if (rememberedAddressCount > 0) {
+      const walletInfo = await instance.getWalletInfo({need_secrets: false});
+      if (walletInfo.wallet_type === 'amethyst' && rememberedAddressCount > walletInfo.total_address_count) {
+        const missingAddressCount = rememberedAddressCount - walletInfo.total_address_count;
+        const restoredAddresses = await instance.createAddresses({
+          secret_spend_keys: new Array(missingAddressCount).fill(''),
+        });
+        if (restoredAddresses.addresses.length !== missingAddressCount) {
+          throw new Error('The wallet did not restore all previously added addresses.');
+        }
+
+        const updatedWalletInfo = await instance.getWalletInfo({need_secrets: false});
+        if (updatedWalletInfo.total_address_count < rememberedAddressCount) {
+          throw new Error('The wallet address count could not be restored.');
+        }
+      }
+    }
+
     setWallet(instance);
 
-    let lastStatusTime = Date.now();
+    let lastStatusTime = Date.now() - STATUS_POLL_DELAY_MS;
     let lastStatusReq: walletd.IGetStatusReq = {};
+    let lastKnownStatus: IStatus = {
+      topBlockHeight: 0,
+      topBlockTime: new Date(0),
+      topBlockHash: '',
+      topKnownBlockHeight: 0,
+      lowerLevelError: '',
+      connectionError: '',
+    };
+    let statusPollDelay = STATUS_POLL_DELAY_MS;
+    const reportConnectionError = (error: Error | null) => {
+      statusPollDelay = Math.min(statusPollDelay * 2, MAX_STATUS_RETRY_DELAY_MS);
+      lastKnownStatus = {
+        ...lastKnownStatus,
+        connectionError: error ? error.message : 'Unknown connection error.',
+      };
+      setStatus(lastKnownStatus);
+      lastStatusTime = Date.now();
+    };
+
+    let walletAddressesLoaded = false;
+    let walletRecordsErrorReported = false;
+    const loadWalletRecords = async (): Promise<boolean> => {
+      const [walletRecords, err] = await util.try_(instance.getWalletRecords({
+        index: 0,
+        count: 0xffffffff,
+      }));
+      if (walletRecords === undefined) {
+        if (isWalletClosedErr(err)) {
+          return false;
+        }
+        if (!walletRecordsErrorReported) {
+          console.warn('failed to get wallet records', err);
+          walletRecordsErrorReported = true;
+        }
+        return false;
+      }
+
+      if (instance.getFilename() !== '' && walletRecords.records.length > 0) {
+        const key = `wallet.${walletRecords.records[0].address}`;
+        const info: IAddressWalletsInfo = JSON.parse(window.localStorage.getItem(key) || '{}');
+        info[instance.getFilename()] = {
+          lastOpen: Date.now().valueOf(),
+          viewOnly,
+        };
+        window.localStorage.setItem(key, JSON.stringify(info));
+      }
+
+      setAddresses(walletRecords.records.map((record): IAddress => ({
+        address: record.address,
+        label: record.label,
+      })));
+      return true;
+    };
 
     let state = new TransferState();
     let height = 0;
@@ -132,7 +253,10 @@ export async function start(
 
 syncLoop:
     while (height >= 0) {
-      lastStatusTime = await util.delay(MAX_STATUS_DELAY_MS, lastStatusTime);
+      if (!walletAddressesLoaded) {
+        walletAddressesLoaded = await loadWalletRecords();
+      }
+      lastStatusTime = await util.delay(statusPollDelay, lastStatusTime);
 
       const [status, errStatus] = await util.try_(instance.getStatus(lastStatusReq));
       if (status === undefined) {
@@ -140,25 +264,31 @@ syncLoop:
         if (isWalletClosedErr(errStatus)) {
           return;
         } else {
+          reportConnectionError(errStatus);
           continue;
         }
       } else if (status.top_known_block_height === 0) {
+        reportConnectionError(new Error('The node responded but has not reported a blockchain height yet.'));
         continue;
       }
 
+      statusPollDelay = STATUS_POLL_DELAY_MS;
       lastStatusReq = {
         top_block_hash: status.top_block_hash,
         transaction_pool_version: status.transaction_pool_version,
         lower_level_error: status.lower_level_error,
       };
 
-      setStatus({
+      lastKnownStatus = {
         topBlockHeight: status.top_block_height,
         topBlockTime: new Date(status.top_block_timestamp * 1000),
         topBlockHash: status.top_block_hash,
         topKnownBlockHeight: status.top_known_block_height,
+        recommendedFeePerByte: status.recommended_fee_per_byte,
         lowerLevelError: status.lower_level_error,
-      });
+        connectionError: '',
+      };
+      setStatus(lastKnownStatus);
 
       const req = {
         height_or_depth: CONFIRMED_DEPTH, // do not use confirmedHeight() here to avoid an error during fast sync
@@ -169,6 +299,7 @@ syncLoop:
         if (isWalletClosedErr(errBalance)) {
           return;
         } else {
+          reportConnectionError(errBalance);
           continue;
         }
       }
@@ -192,6 +323,7 @@ syncLoop:
           if (isWalletClosedErr(err)) {
             return;
           } else {
+            reportConnectionError(err);
             continue;
           }
         }
@@ -213,6 +345,7 @@ syncLoop:
             if (isWalletClosedErr(err)) {
               return;
             } else {
+              reportConnectionError(err);
               continue syncLoop;
             }
           }
@@ -239,6 +372,7 @@ syncLoop:
             if (isWalletClosedErr(err)) {
               return;
             } else {
+              reportConnectionError(err);
               continue syncLoop;
             }
           }
@@ -252,35 +386,6 @@ syncLoop:
       if (newDays !== days) {
         days = newDays;
         setHistory(days);
-
-        const [walletRecords, err] = await util.try_(instance.getWalletRecords({}));
-        if (walletRecords === undefined) {
-          console.warn('failed to get wallet records', err);
-          if (isWalletClosedErr(err)) {
-            return;
-          } else {
-            continue;
-          }
-        }
-
-        if (instance.getFilename() !== '' && walletRecords.records.length > 0) {
-          const key = `wallet.${walletRecords.records[0].address}`;
-          const info: IAddressWalletsInfo = JSON.parse(window.localStorage.getItem(key) || '{}');
-          info[instance.getFilename()] = {
-            lastOpen: Date.now().valueOf(),
-            viewOnly,
-          };
-          window.localStorage.setItem(key, JSON.stringify(info));
-        }
-
-        const addresses = walletRecords.records.map((record): IAddress => {
-          return {
-            address: record.address,
-            label: record.label,
-          };
-        });
-
-        setAddresses(addresses);
       }
     }
   } catch (err) {
@@ -290,17 +395,18 @@ syncLoop:
   }
 }
 
-const DEFAULT_BYTECOIND_ADDR = 'https://node02.bytecoin.org:8091';
+const STATUS_POLL_DELAY_MS = 2000;
+const MAX_STATUS_RETRY_DELAY_MS = 30000;
+export const CONNECTION_ERROR_GRACE_PERIOD_MS = 5000;
 
-const MAX_STATUS_DELAY_MS = 100;
-
-const CONFIRMATIONS = 3;
-export const CONFIRMED_DEPTH = -CONFIRMATIONS - 1; // TODO is -1 right here?
+export const REQUIRED_CONFIRMATIONS = 10;
+const BLOCKS_AFTER_INCLUSION_FOR_CONFIRMATION = REQUIRED_CONFIRMATIONS - 1;
+export const CONFIRMED_DEPTH = -REQUIRED_CONFIRMATIONS;
 const TX_HISTORY_SIZE = 1000;                      // TODO incremental history loading
 const TX_CATCH_UP_BATCH_SIZE = 100;
 
 function confirmedHeight(height: number): number {
-  return Math.max(height - CONFIRMATIONS, 0);
+  return Math.max(height - BLOCKS_AFTER_INCLUSION_FOR_CONFIRMATION, 0);
 }
 
 class TransferState {
@@ -407,7 +513,14 @@ class TransferState {
         time: new Date(tx.timestamp * 1000),
         kind: txKind,
         hash: tx.hash,
+        amount: tx.amount,
         fee: tx.fee,
+        paymentId: tx.payment_id,
+        anonymity: tx.anonymity,
+        unlockBlockOrTimestamp: tx.unlock_block_or_timestamp,
+        publicKey: tx.public_key,
+        coinbase: tx.coinbase,
+        extra: tx.extra,
         summary,
         transfers: groupedTransfers,
       };

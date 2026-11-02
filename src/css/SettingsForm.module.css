@@ -4,21 +4,376 @@
  */
 
 .settingsForm {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  margin: 0 auto;
+  color: var(--color-text);
 }
 
-.noSleepGroup {
+.section {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.9rem;
+  background: var(--surface);
+}
+
+.section h2 {
+  margin: 0 0 0.2rem;
+  color: var(--color-text);
+  font-size: 1.05rem;
+}
+
+.section label {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.section label span {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.section input[type='url'],
+.section input[type='password'],
+.section select {
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.6rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
+}
+
+.selectedNode {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface-muted);
+}
+
+.selectedNode span {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
+
+.selectedNode strong {
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.addNodeForm {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.addNodeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.addNodeButton,
+.nodeSelectButton,
+.nodeSelectSelected,
+.nodeIconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.6rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addNodeButton {
+  border-color: var(--button-primary-bg);
+  background: var(--button-primary-bg);
+  color: #fff;
+}
+
+.nodeSelectButton:hover:not(:disabled),
+.nodeIconButton:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.addNodeButton:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.addNodeButton:disabled,
+.nodeSelectButton:disabled,
+.nodeIconButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.nodeList {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nodeItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.7rem;
+  background: var(--surface-muted);
+}
+
+.nodeEntryMain {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.nodeAddress {
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-family: var(--monospace-fonts);
+  font-size: 0.82rem;
+}
+
+.selectedBadge {
+  justify-self: start;
+  padding: 0.12rem 0.45rem;
+  border: 1px solid var(--color-success-light);
+  border-radius: 999px;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  font-size: 0.7rem;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.nodeEditInput {
+  width: 100%;
+  min-width: 0;
+}
+
+.nodeActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.nodeToggle {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 0.2rem;
+  color: var(--color-muted) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+
+.nodeToggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.toggleTrack {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 2.15rem;
+  height: 1.2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.toggleTrack::after {
+  position: absolute;
+  top: 0.12rem;
+  left: 0.12rem;
+  width: 0.86rem;
+  height: 0.86rem;
+  border-radius: 50%;
+  background: var(--color-muted);
+  content: '';
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.nodeToggle input:checked + .toggleTrack {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
+.nodeToggle input:checked + .toggleTrack::after {
+  background: #fff;
+  transform: translateX(0.94rem);
+}
+
+.nodeToggle input:focus-visible + .toggleTrack {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.deleteNodeButton:hover:not(:disabled) {
+  border-color: #ef476f;
+  color: #ef476f;
+}
+
+.nodeSelectButton,
+.nodeSelectSelected {
+  min-width: 5.4rem;
+}
+
+.nodeSelectSelected {
+  border-color: var(--color-success);
+  background: linear-gradient(135deg, var(--color-success-light), var(--surface-muted));
+  color: var(--color-success);
+  cursor: default;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 8px var(--color-success-light);
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.checkboxRow input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.checkboxRow select {
+  width: auto;
+  min-width: 9rem;
+}
+
+.helpText {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.nodeResult {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 0.6rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--button-primary-bg);
+  border-radius: 0.65rem;
+  background: var(--button-primary-bg);
+  color: #fff;
+  font-weight: 650;
 }
 
 .controls {
-  margin-top: 1rem;
   display: flex;
   justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .closeWallet {
-  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--color-text);
 }
 
 .dismiss {
-  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--color-text);
+}
+
+.closeWallet:hover:not(:disabled),
+.dismiss:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+@media (max-width: 575px) {
+  .section {
+    padding: 1rem;
+  }
+
+  .addNodeRow,
+  .nodeItem {
+    grid-template-columns: 1fr;
+  }
+
+  .nodeActions {
+    justify-content: flex-start;
+  }
+
+  .controls > button {
+    flex: 1;
+  }
+
+  .primaryButton {
+    justify-self: stretch;
+  }
 }

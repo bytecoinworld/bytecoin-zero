@@ -4,11 +4,24 @@
  */
 
 .sendForm {
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  background: var(--surface);
+  color: var(--color-text);
+  box-shadow: var(--big-shadow);
 }
 
 .sendForm input {
+  min-height: 2.75rem;
   font-family: var(--monospace-fonts);
-  padding-left: 0.25rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.6rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
 }
 
 .sendForm input:global(.valid) {
@@ -20,6 +33,7 @@
 
 .transfer {
   display: flex;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
@@ -29,6 +43,8 @@
 
 .addressGroup, .amountGroup {
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
@@ -44,6 +60,63 @@
   max-width: 20ch;
 }
 
+.pasteButton,
+.sendAllButton {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.6rem;
+  background: var(--surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+}
+
+.pasteButton {
+  width: 2.75rem;
+  padding: 0.55rem;
+  color: var(--color-primary);
+}
+
+.sendAllButton {
+  padding: 0.55rem 0.8rem;
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.pasteButton:hover,
+.sendAllButton:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.pasteButton:focus-visible,
+.sendAllButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.sendAllButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.addressMessage {
+  margin: -0.15rem 0 0.65rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
 .addressViz {
   align-self: center;
   width: 3rem;
@@ -52,16 +125,502 @@
   margin-right: 0.5rem;
 }
 
+.transactionOptions {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.85rem;
+  background:
+    radial-gradient(80% 180% at 0% 50%, var(--color-primary-soft), transparent 78%),
+    linear-gradient(135deg, var(--surface-muted), var(--surface));
+}
+
+.feeRateHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.feeRecommendation {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.feeRecommendation strong {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.feeRateOutput {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.feeControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.8fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.feeRateControl {
+  min-width: 0;
+}
+
+.feeRateControl input[type='range'] {
+  width: 100%;
+  min-height: 1rem;
+  height: 1.2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.feeRateControl input[type='range']:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.feeScale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+}
+
+.subtractFeeOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 1.5rem;
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.subtractFeeOption input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  min-height: 1rem;
+  padding: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.subtractFeeOption input[type='checkbox']:disabled {
+  cursor: not-allowed;
+}
+
+.optionHint {
+  margin: 0.25rem 0 0 1.55rem;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+}
+
+.optionalFields {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.35fr) minmax(0, 1fr);
+  gap: 0.85rem;
+  margin-top: 0.9rem;
+}
+
+.optionField {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.optionField input {
+  width: 100%;
+  max-width: none;
+  font-family: var(--sans-serif-fonts);
+}
+
+.optionalFields .optionField:first-child input {
+  max-width: 8rem;
+}
+
+.optionError {
+  margin: 0.5rem 0 0;
+  color: var(--color-danger);
+  font-size: 0.75rem;
+}
+
 .controls {
   display: flex;
   justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .cancelButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   color: var(--color-danger);
-  padding: 0 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  background: var(--surface);
 }
 
 .sendButton {
-  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--button-primary-bg);
+  border-radius: 0.65rem;
+  background: var(--button-primary-bg);
+  color: #fff;
+  font-weight: 650;
+}
+
+.cancelButton:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  background: var(--color-danger-light);
+}
+
+.sendButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sendError {
+  margin: 0 0 0.75rem;
+  color: var(--color-danger);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.modalBackdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgba(8, 5, 10, 0.76);
+  backdrop-filter: blur(5px);
+}
+
+.dialog {
+  width: min(100%, 36rem);
+  max-height: min(90vh, 48rem);
+  overflow-y: auto;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  background: var(--surface);
+  color: var(--color-text);
+  box-shadow: var(--big-shadow);
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.dialogIcon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.85rem;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.successDialogIcon {
+  background: var(--color-success-light);
+  color: var(--color-success);
+  animation: successIconPop 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.successCheckIcon {
+  width: 1.8rem;
+  height: 1.8rem;
+  overflow: visible;
+}
+
+.successCircle,
+.successCheck {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.successCircle {
+  stroke-width: 2.5;
+  stroke-dasharray: 107;
+  stroke-dashoffset: 107;
+  animation: successCircleDraw 500ms ease-out 100ms forwards;
+}
+
+.successCheck {
+  stroke-width: 3;
+  stroke-dasharray: 28;
+  stroke-dashoffset: 28;
+  animation: successCheckDraw 300ms ease-out 460ms forwards;
+}
+
+.successStatus {
+  margin: 0.9rem 0 0;
+  color: var(--color-success);
+  font-size: 0.85rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+@keyframes successIconPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes successCircleDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes successCheckDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .successDialogIcon,
+  .successCircle,
+  .successCheck {
+    animation: none;
+  }
+
+  .successCircle,
+  .successCheck {
+    stroke-dashoffset: 0;
+  }
+}
+
+.dialogHeader h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
+.dialogHeader p {
+  margin: 0.35rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.passwordForm {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.passwordForm label {
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.passwordForm input {
+  width: 100%;
+  max-width: none;
+}
+
+.dialogError {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.reviewDetails {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.reviewRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.reviewRow dt {
+  flex: 0 0 34%;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.reviewRow dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 0.87rem;
+  font-weight: 650;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.reviewAddress {
+  font-family: var(--monospace-fonts);
+  font-size: 0.75rem !important;
+}
+
+.reviewTotal {
+  padding-top: 0.9rem;
+  border-bottom: 0;
+}
+
+.reviewTotal dd {
+  color: var(--color-primary);
+  font-size: 1rem;
+}
+
+.feeNotice {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 0.6rem;
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+  font-size: 0.78rem;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.dialogSecondaryButton,
+.dialogPrimaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.65rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.dialogSecondaryButton {
+  background: var(--surface-muted);
+  color: var(--color-text);
+}
+
+.dialogSecondaryButton:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.dialogPrimaryButton {
+  border-color: var(--button-primary-bg);
+  background: var(--button-primary-bg);
+  color: #fff;
+}
+
+.dialogSecondaryButton:disabled,
+.dialogPrimaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.dialogSecondaryButton:focus-visible,
+.dialogPrimaryButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 575px) {
+  .sendForm {
+    padding: 1rem;
+  }
+
+  .feeRateHeader {
+    align-items: flex-start;
+  }
+
+  .feeControls,
+  .optionalFields {
+    grid-template-columns: 1fr;
+  }
+
+  .feeControls {
+    gap: 0.7rem;
+  }
+
+  .optionalFields .optionField:first-child input {
+    max-width: none;
+  }
+
+  .transfer {
+    flex-direction: column;
+  }
+
+  .addressViz {
+    align-self: flex-start;
+  }
+
+  .controls > button {
+    flex: 1;
+  }
+
+  .dialog {
+    padding: 1.1rem;
+  }
+
+  .dialogActions > button {
+    flex: 1;
+  }
 }

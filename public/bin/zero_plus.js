@@ -44,10 +44,11 @@ let find_least_busy_worker_id = function() {
 let http_server_calls = new Map();
 let last_call_handle = 0;
 
-let cn_walletd_start = function(argv) { // restarting walletd cancels all outstanding http requests
+let cn_walletd_start = function(argv, walletPassword) { // restarting walletd cancels all outstanding http requests
     let transferObject = {
         'func' : "walletd_start",
-        'argv' : argv
+        'argv' : argv,
+        'walletPassword' : walletPassword || ''
     };
     if (argv.length > 5)
         throw "Only up to 5 parameters supported (sorry, emscripten is a mess)";
@@ -58,6 +59,10 @@ let cn_walletd_start = function(argv) { // restarting walletd cancels all outsta
     prev.forEach(function(value, key, map) {
         value(555, "Walletd Restarted");
     });
+};
+
+let cn_walletd_clear_wallet_password = function() {
+    mainworker.postMessage({ 'func' : 'walletd_clear_password' });
 };
 
 let cn_http_server_call = function(method, uri, body, cb) { // (string, string, string, function(int, string))

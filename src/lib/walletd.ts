@@ -3,7 +3,8 @@
 
 type ModuleHTTPHandle = number;
 
-declare function cn_walletd_start(argv: string[]): void;
+declare function cn_walletd_start(argv: string[], walletPassword: string): void;
+declare function cn_walletd_clear_wallet_password(): void;
 declare function cn_http_server_call(method: string, path: string, body: string, callback: (status: number, body: string) => void): ModuleHTTPHandle;
 declare function cn_http_server_cancel(handle: ModuleHTTPHandle): void;
 
@@ -26,31 +27,42 @@ export class Walletd {
   private closed = false;
   private filename = '';
 
-  private constructor(bytecoindAddr: string) {
-    cn_walletd_start([`--bytecoind-remote-address=${bytecoindAddr}`, '--secrets-via-api']);
+  private constructor(bytecoindAddr: string, walletPassword: string) {
+    cn_walletd_start([`--bytecoind-remote-address=${bytecoindAddr}`, '--secrets-via-api'], walletPassword);
   }
 
-  static async create(bytecoindAddr: string, isFile: boolean, description: string, timestamp: number): Promise<Walletd> {
-    console.info('opening wallet:', description, new Date(timestamp * 1000));
+  static async create(
+    bytecoindAddr: string,
+    isFile: boolean,
+    description: string,
+    timestamp: number,
+    walletPassword: string,
+  ): Promise<Walletd> {
+    console.info('opening wallet:', isFile ? description : 'mnemonic wallet', new Date(timestamp * 1000));
 
-    const w = new Walletd(bytecoindAddr);
+    const w = new Walletd(bytecoindAddr, walletPassword);
 
-    if (isFile) {
-      await w.openWallet({
-        wallet_file: description,
-        wallet_password: '',
-      });
+    try {
+      if (isFile) {
+        await w.openWallet({
+          wallet_file: description,
+          wallet_password: '',
+        });
 
-      w.filename = description;
-    } else {
-      const resp = await w.createWallet({
-        mnemonic: description,
-        creation_timestamp: timestamp,
-      });
+        w.filename = description;
+      } else {
+        const resp = await w.createWallet({
+          mnemonic: description,
+          creation_timestamp: timestamp,
+        });
 
-      w.filename = resp.wallet_file;
+        w.filename = resp.wallet_file;
+      }
+    } catch (error) {
+      cn_walletd_clear_wallet_password();
+      throw error;
     }
-    console.log('created/opened wallet, filename:', w.filename);
+    console.log('created/opened wallet');
 
     return w;
   }
@@ -58,7 +70,11 @@ export class Walletd {
   async close(): Promise<void> {
     if (!this.closed) {
       this.closed = true;
-      return this.closeWallet();
+      try {
+        await this.closeWallet();
+      } finally {
+        cn_walletd_clear_wallet_password();
+      }
     }
   }
 

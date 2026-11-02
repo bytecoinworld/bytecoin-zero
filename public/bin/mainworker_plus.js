@@ -1,11 +1,28 @@
 Module = {};
 Module['noExitRuntime'] = true;
+Module['print'] = function(message) {
+    if (typeof message === 'string' && message.indexOf('WalletHDJson::WalletHDJson:') !== -1) {
+        console.info('Wallet recovery phrase output suppressed.');
+        return;
+    }
+    console.log(message);
+};
+Module['printErr'] = function(message) {
+    if (typeof message === 'string' && message.indexOf('WalletHDJson::WalletHDJson:') !== -1) {
+        console.info('Wallet recovery phrase output suppressed.');
+        return;
+    }
+    console.warn(message);
+};
 
 importScripts('mainworker.js');
+importScripts('wallet-crypto.js');
 
 (function() {
 let db;
 let db_initialized = false;
+let walletCryptoPassword = '';
+let walletCryptoContext = BytecoinWalletCrypto.createContext(self.crypto, '');
 
 // Message passing
 let messageBuffer = null;
@@ -117,15 +134,72 @@ db_init_req.onupgradeneeded = function(e) {
 db_init_req.onsuccess = function(e) {
     console.log('Success opening db');
     db = db_init_req.result;
+    db.onversionchange = function() {
+        db.close();
+    };
     db_initialized = true;
 };
 db_init_req.onerror = function(e) {
-    console.log('Error opening db');
+    console.error('Error opening db', e);
     db_initialized = true;
 };
 
 let file_ops = new Map();
 let next_file_op = 0;
+let persist_wallet_file = function(filename, data, preventEncryptedOverwrite) {
+    return new Promise(function(resolve, reject) {
+        let transaction;
+        try {
+            transaction = db.transaction([ 'Files' ], 'readwrite');
+            transaction.oncomplete = function() { resolve(); };
+            transaction.onerror = function() {
+                reject(transaction.error || new Error('Error saving wallet file'));
+            };
+            transaction.onabort = function() {
+                reject(transaction.error || new Error('Wallet file save was aborted'));
+            };
+            let store = transaction.objectStore('Files');
+            if (preventEncryptedOverwrite) {
+                let existing = store.get(filename);
+                existing.onsuccess = function() {
+                    if (existing.result && BytecoinWalletCrypto.isEncrypted(new Uint8Array(existing.result))) {
+                        let error = new Error('This wallet was encrypted in another tab. Close other wallet tabs and reopen it.');
+                        transaction.abort();
+                        reject(error);
+                        return;
+                    }
+                    store.put(data, filename);
+                };
+                existing.onerror = function() {
+                    reject(existing.error || new Error('Could not verify the saved wallet file.'));
+                    transaction.abort();
+                };
+            } else {
+                store.put(data, filename);
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+let finish_wallet_open = function(handle, data, error) {
+    let ha = file_ops.get(handle);
+    if (ha === undefined)
+        return;
+    file_ops.delete(handle);
+    if (error) {
+        console.error('Error opening wallet file', error);
+        ha.cb(handle, ha.me, 0, 0, allocateUTF8OnStack(
+            error && error.message ? error.message : 'Error opening wallet file'));
+        return;
+    }
+    if (!data) {
+        ha.cb(handle, ha.me, 0, 0, 0);
+        return;
+    }
+    set_wasm_transfer_buffer(data);
+    ha.cb(handle, ha.me, wasm_transfer_buffer, data.length, 0);
+};
 let cn_file_op = function(me, cb, verb, filename, data, size) {
     next_file_op += 1;
     file_ops.set(next_file_op, { 'me' : me, 'cb' : getFuncWrapper(cb, 'viiiii') });
@@ -144,18 +218,24 @@ let cn_file_op = function(me, cb, verb, filename, data, size) {
             }, 0);
         } else {
             let request = db.transaction([ 'Files' ]).objectStore('Files').get(jfilename)
-            request.onsuccess = function(event) {
+            request.onsuccess = async function(event) {
                 let result = request.result;
                 //         console.log("Success opening db", result);
-                let ha = file_ops.get(my_file_op);
-                if (ha === undefined)
-                    return;
-                file_ops.delete(my_file_op);
                 if (result == undefined) {
-                    ha.cb(my_file_op, ha.me, 0, 0, 0);
+                    finish_wallet_open(my_file_op, null, null);
                 } else {
-                    set_wasm_transfer_buffer(result);
-                    ha.cb(my_file_op, ha.me, wasm_transfer_buffer, result.length, 0);
+                    try {
+                        let wallet_data = new Uint8Array(result);
+                        if (BytecoinWalletCrypto.isEncrypted(wallet_data)) {
+                            wallet_data = await walletCryptoContext.decrypt(wallet_data, jfilename);
+                        } else if (walletCryptoPassword) {
+                            let encrypted_data = await walletCryptoContext.encrypt(wallet_data, jfilename);
+                            await persist_wallet_file(jfilename, encrypted_data, true);
+                        }
+                        finish_wallet_open(my_file_op, wallet_data, null);
+                    } catch (error) {
+                        finish_wallet_open(my_file_op, null, error);
+                    }
                 }
             };
             request.onerror = function(event) {
@@ -175,29 +255,47 @@ let cn_file_op = function(me, cb, verb, filename, data, size) {
                 if (ha === undefined)
                     return;
                 file_ops.delete(my_file_op);
-                ha.cb(my_file_op, ha.me, 0, 0, 0);
+                console.error('Error saving DB: database is unavailable');
+                ha.cb(my_file_op, ha.me, 0, 0, allocateUTF8OnStack('Error saving DB'));
             }, 0);
         } else {
-            let jdata = new Uint8Array(HEAPU8.subarray((data), (data + size)))
-            let request = db.transaction([ 'Files' ], 'readwrite')
-                              .objectStore('Files')
-                              .put(jdata, jfilename);
-            request.onsuccess = function(event) {
-                //         console.log("Success saving db");
+            let finished = false;
+            let finish = function(error) {
+                if (finished)
+                    return;
+                finished = true;
                 let ha = file_ops.get(my_file_op);
                 if (ha === undefined)
                     return;
                 file_ops.delete(my_file_op);
-                ha.cb(my_file_op, ha.me, 0, 0, 0);
+                if (error) {
+                    console.error('Error saving DB', error);
+                    ha.cb(my_file_op, ha.me, 0, 0, allocateUTF8OnStack(
+                        error && error.message ? error.message : 'Error saving wallet file'));
+                } else {
+                    ha.cb(my_file_op, ha.me, 0, 0, 0);
+                }
             };
-            request.onerror = function(event) {
-                console.log('Error saving db', event);
-                let ha = file_ops.get(my_file_op);
-                if (ha === undefined)
-                    return;
-                file_ops.delete(my_file_op);
-                ha.cb(my_file_op, ha.me, 0, 0, allocateUTF8OnStack('Error saving DB'));
-            };
+            try {
+                let wallet_data = new Uint8Array(HEAPU8.subarray((data), (data + size)));
+                let protect_file = !!walletCryptoPassword;
+                let crypto_context = walletCryptoContext;
+                Promise.resolve(wallet_data)
+                    .then(function(value) {
+                        return protect_file ? crypto_context.encrypt(value, jfilename) : value;
+                    })
+                    .then(function(value) {
+                        return persist_wallet_file(jfilename, value, !protect_file);
+                    })
+                    .then(function() {
+                        finish(null);
+                    })
+                    .catch(function(error) {
+                        finish(error);
+                    });
+            } catch (error) {
+                finish(error);
+            }
         }
     } else
         throw 'cn_file_op unknown verb ' + jverb;
@@ -338,6 +436,12 @@ onmessage = function onmessage(msg) {
     }
     flushMessages();
 
+    if (msg.data.func === 'walletd_clear_password') {
+        walletCryptoContext.clear();
+        walletCryptoPassword = '';
+        return;
+    }
+
     let func = Module[msg.data.func];
     if (!func)
         throw 'invalid worker function to call: ' + msg.data.func;
@@ -345,7 +449,10 @@ onmessage = function onmessage(msg) {
     if (msg.data.func === 'on_block_prepared' || msg.data.func === 'on_transaction_prepared') {
         pass_worker_reply(msg);
     } else if (msg.data.func === 'walletd_start') {
-        let argv = msg.data.argv;
+            walletCryptoContext.clear();
+            walletCryptoPassword = msg.data.walletPassword || '';
+            walletCryptoContext = BytecoinWalletCrypto.createContext(self.crypto, walletCryptoPassword);
+            let argv = msg.data.argv;
         let arg0 = argv.length > 0 ? argv[0] : '';
         let arg1 = argv.length > 1 ? argv[1] : '';
         let arg2 = argv.length > 2 ? argv[2] : '';
