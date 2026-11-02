@@ -55,7 +55,7 @@ cd bytecoin-zero
 npm ci
 ```
 
-This project uses an older Create React App build toolchain. With Node.js 24, set the legacy OpenSSL provider for development and production builds:
+This project uses an older Create React App build toolchain. With Node.js 24, the local development server needs the legacy OpenSSL provider:
 
 **Windows PowerShell**
 
@@ -157,20 +157,11 @@ npm test -- --watchAll=false
 
 Create an optimized static production build:
 
-**Windows PowerShell**
-
-```powershell
-$env:NODE_OPTIONS = "--openssl-legacy-provider"
+```sh
 npm run build
 ```
 
-**macOS / Linux**
-
-```sh
-NODE_OPTIONS=--openssl-legacy-provider npm run build
-```
-
-The generated site is written to `build/`. Serve that directory from a static web host configured for HTTPS. The OpenSSL compatibility option is for the local Node.js build tooling; it is not a browser runtime setting.
+The build script passes Node.js's OpenSSL compatibility flag to the legacy Webpack toolchain, so CI providers such as Cloudflare Pages can use the standard `npm run build` command without a separate `NODE_OPTIONS` setting. The generated site is written to `build/`. Serve that directory from a static web host configured for HTTPS. The compatibility flag applies only to the build process, not to the browser runtime.
 
 ## 🗂️ Project layout
 
