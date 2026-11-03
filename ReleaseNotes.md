@@ -29,4 +29,4 @@ Bytecoin Zero 0.2.1 brings a more complete mobile wallet experience, clearer wal
 
 ## Deployment note
 
-To enable the hosted node relay, deploy the repository through Cloudflare Pages with the root `functions/` directory and the `build/` output. Dashboard drag-and-drop uploads static files only and do not deploy Pages Functions. See the [README deployment instructions](./README.md#hosted-node-relay-and-cors) for Git integration and Wrangler CLI setup.
+To enable the hosted node relay, deploy the Worker using the repository's `wrangler.jsonc` configuration, or deploy the Pages Function with the `build/` output. A static-only upload does not include server-side relay code. See the [README deployment instructions](./README.md#hosted-node-relay-and-cors) for the Worker and Pages setup.

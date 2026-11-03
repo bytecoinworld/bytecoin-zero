@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add a Cloudflare Workers Static Assets entry point and Wrangler configuration that execute the curated node relay before serving static assets.
 - Connect directly to the CORS-enabled official node and reserve the hosted relay for the alternate node that blocks browser CORS.
 - Ensure remote HTTPS node addresses include an explicit port when passed to the wallet engine, preventing hosted-relay startup failures.
 - Add a wallet help guide covering setup, sending, receiving, backups, network settings, and troubleshooting.

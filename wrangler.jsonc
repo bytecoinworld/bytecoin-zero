@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bytecoin-zero",
+  "main": "./workers/bytecoin-zero-worker.js",
+  "compatibility_date": "2026-11-03",
+  "assets": {
+    "directory": "./build",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/_node-proxy/*",
+      "/json_rpc",
+      "/binary_rpc",
+      "/sync_blocks/*"
+    ]
+  }
+}

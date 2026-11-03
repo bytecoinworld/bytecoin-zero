@@ -97,7 +97,9 @@ The browser bundle includes a preserved v3.4.3 wallet-engine snapshot for synchr
 
 ### Hosted node relay and CORS
 
-The official node, `https://node01.bytecoin.org:8091`, allows browser CORS and is contacted directly. The alternate `https://node.bytecoin.network` responds to RPC requests but does not return the CORS headers browsers require, so the wallet routes it through the same-origin relay. The `bcn.money` Cloudflare Pages relay is restricted to the built-in nodes listed in [`src/lib/hostedNodeProxyNodes.json`](./src/lib/hostedNodeProxyNodes.json). It forwards only the wallet's JSON-RPC, binary-RPC, and sync-block paths to those fixed HTTPS upstreams; it is not an arbitrary URL proxy. Cloudflare Pages must deploy the repository's root `functions/` directory alongside the `build/` output. The copied [`public/_routes.json`](./public/_routes.json) limits Function invocation to the RPC paths; it does not deploy the Function by itself.
+The official node, `https://node01.bytecoin.org:8091`, allows browser CORS and is contacted directly. The alternate `https://node.bytecoin.network` responds to RPC requests but does not return the CORS headers browsers require, so the wallet routes it through the same-origin relay. The relay is restricted to the built-in nodes listed in [`src/lib/hostedNodeProxyNodes.json`](./src/lib/hostedNodeProxyNodes.json). It forwards only the wallet's JSON-RPC, binary-RPC, and sync-block paths to those fixed HTTPS upstreams; it is not an arbitrary URL proxy.
+
+This project supports both Cloudflare Pages and Workers Static Assets. Pages deploys the root `functions/` directory with the `build/` output. The Workers deployment uses [`workers/bytecoin-zero-worker.js`](./workers/bytecoin-zero-worker.js) and [`wrangler.jsonc`](./wrangler.jsonc); its `run_worker_first` routes are required so relay requests reach the Worker instead of returning static 404s. The copied [`public/_routes.json`](./public/_routes.json) applies to Pages only and does not activate a Worker or deploy a Function.
 
 For Pages Git integration, use the repository root as the project root, `npm run build` as the build command, and `build` as the output directory. For CLI deployments, run `npx wrangler pages deploy build --project-name=YOUR_PAGES_PROJECT_NAME` from the repository root. Do not use dashboard drag-and-drop for this project: it deploys static files without Pages Functions. See Cloudflare's [Pages Functions deployment guide](https://developers.cloudflare.com/pages/functions/get-started/). After deployment, a POST to `https://bcn.money/_node-proxy/alternate/json_rpc` with a `get_status` JSON-RPC request should return HTTP 200; a 404 indicates the relay Function is not active on that route.
 
@@ -185,7 +187,9 @@ The build script passes Node.js's OpenSSL compatibility flag to the legacy Webpa
 | `src/lib/` | Wallet, synchronization, settings, contacts, storage helpers, and the hosted node allowlist. |
 | `src/css/` | Component styles. |
 | `src/**/*.test.*` | Tests colocated with the components and libraries they cover. |
-| `functions/` | Cloudflare Pages Function middleware for the curated production node relay. |
+| `functions/` | Shared Cloudflare Pages Function relay handler. |
+| `workers/` | Cloudflare Workers Static Assets entry point for the relay and static app. |
+| `wrangler.jsonc` | Worker name, static asset binding, and relay-first routes. |
 | `build/` | Generated production site; created by `npm run build`. |
 | `.github/workflows/release.yml` | Tag-triggered GitHub Release build and archive workflow. |
 | `CHANGELOG.md` | Release and feature history. |
@@ -202,7 +206,7 @@ For example:
 npm version patch
 ```
 
-The GitHub Actions release workflow runs on `v*` tags and verifies that the tag matches `package.json`. It installs the locked dependencies, builds the static site, and attaches a ZIP archive to the GitHub Release. It does **not** automatically publish the app to GitHub Pages or another hosting provider. A static host can serve `build/`, but the production node relay requires Cloudflare Pages to deploy the repository's root `functions/` directory as well; uploading only the build output does not deploy the relay. Without the relay, configured nodes must provide browser CORS themselves.
+The GitHub Actions release workflow runs on `v*` tags and verifies that the tag matches `package.json`. It installs the locked dependencies, builds the static site, and attaches a ZIP archive to the GitHub Release. It does **not** automatically publish the app to another hosting provider. For the Cloudflare Workers project, set the build command to `npm run build` and the deploy command to `npm run deploy:worker`, using the repository root. The `name` in `wrangler.jsonc` must match the existing Worker name in the Cloudflare dashboard, and `bcn.money` must be attached to that Worker. For a Pages project instead, deploy the root `functions/` directory with the `build/` output. A static-only upload does not deploy either relay implementation; without a relay, nodes must provide browser CORS themselves.
 
 ## 🤝 Contributing and support
 
