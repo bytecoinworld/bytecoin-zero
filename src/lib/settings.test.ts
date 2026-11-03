@@ -50,9 +50,14 @@ describe('randomNodeFromPool', () => {
 
 describe('getNodeRpcAddress', () => {
   it('identifies only the curated hosted proxy nodes', () => {
-    expect(getHostedProxyNodeId(DEFAULT_NODE)).toBe('default');
+    expect(getHostedProxyNodeId(DEFAULT_NODE)).toBeNull();
     expect(getHostedProxyNodeId(ALTERNATE_NODE)).toBe('alternate');
     expect(getHostedProxyNodeId('https://custom.example')).toBeNull();
+  });
+
+  it('keeps the CORS-enabled official node connected directly', () => {
+    expect(getNodeRpcAddress(DEFAULT_NODE, false)).toBe(DEFAULT_NODE);
+    expect(getNodeEngineAddress(DEFAULT_NODE, false)).toBe(DEFAULT_NODE);
   });
 
   it('uses the same-origin proxy for the alternate node on loopback-hosted previews', () => {
